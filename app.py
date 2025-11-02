@@ -5,7 +5,7 @@ from pathlib import Path
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 # Esto debe ser lo primero que se ejecute en tu script.
 st.set_page_config(
-    page_title="PROYECTO ELECTRICO",
+    page_title="Paneles solares",
     page_icon="⚡",
     layout="wide", # Usa el ancho completo de la página
     initial_sidebar_state="collapsed", # Oculta la barra lateral por defecto
