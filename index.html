@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Showcase: Generación Eléctrica Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #2563EB; /* Azul */
+            --primary-solar: #F59E0B; /* Ámbar/Solar */
+            --accent-green: #10B981; /* Verde para O&M */
+            --dark-text: #1F2937; /* Gris oscuro casi negro */
+            --light-text: #6B7280; /* Gris medio */
+            --background-light: #F9FAFB; /* Fondo muy claro (blanco/gris) */
+            --border-color: #E5E7EB; /* Gris claro para bordes */
+        }
+        html { scroll-padding-top: 80px; }
+        body { font-family: 'Roboto', sans-serif; background-color: var(--background-light); color: var(--dark-text); }
+        .page { display: none; }
+        .page.active { display: block; }
+
+        header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); }
+        .section-title { font-family: 'Montserrat', sans-serif; font-size: 2.75rem; letter-spacing: -0.5px; color: var(--dark-text); font-weight: 700; line-height: 1.1; }
+        .section-subtitle { font-family: 'Roboto', sans-serif; color: var(--light-text); max-width: 900px; margin-left: auto; margin-right: auto; font-size: 1.15rem; line-height: 1.6; }
+        
+        .card { background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 2.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
+        
+        body.presentation-mode { overflow: hidden; }
+        .presentation-page body.presentation-mode .slide { display: none; height: calc(100vh - 128px); overflow-y: auto; padding-top: 2rem; padding-bottom: 2rem; opacity: 0; transition: opacity 0.5s ease-in-out; cursor: pointer; }
+        .presentation-page body.presentation-mode .slide.active-slide { display: flex; align-items: center; opacity: 1; }
+        
+        /* Navegación de slides */
+        .presentation-nav-tree .nav-item { color: var(--light-text); font-weight: 500; border-bottom: 2px solid transparent; }
+        .presentation-nav-tree .nav-item:hover { color: var(--dark-text); }
+        .presentation-nav-tree .nav-item.active { color: var(--primary-solar); font-weight: 700; border-bottom: 2px solid var(--primary-solar); }
+        
+        .clickable-image { cursor: zoom-in; }
+        #image-modal-backdrop { transition: opacity 0.3s ease; }
+        #image-modal-content { transition: opacity 0.3s ease, transform 0.3s ease; }
+
+        /* Estilos de íconos temáticos */
+        .icon-dimensionamiento { color: var(--primary-blue); }
+        .icon-mantenimiento { color: var(--accent-green); }
+        .icon-correctivo { color: #EF4444; }
+        .icon-predictivo { color: var(--primary-solar); }
+        .icon-general { color: var(--light-text); }
+
+        /* Estilos para Pestañas Interactivas (Generales) */
+        .tab-btn-container { border-bottom: 2px solid var(--border-color); }
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--light-text);
+            border-bottom: 4px solid transparent;
+            transform: translateY(2px); /* Alinea con el borde inferior del contenedor */
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .tab-btn:hover {
+            color: var(--dark-text);
+        }
+        .tab-btn.active {
+            color: var(--primary-blue);
+            border-bottom-color: var(--primary-blue);
+        }
+        .tab-content {
+            display: none; /* Oculto por defecto */
+            animation: fadeIn 0.5s ease;
+        }
+        .tab-content.active {
+            display: block; /* Visible */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Estilos para Pestañas de Comparativa (Específicos) */
+        .comparison-btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .comparison-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--light-text);
+            background-color: var(--background-light);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: left;
+        }
+        .comparison-btn:hover {
+            color: var(--dark-text);
+            border-color: var(--primary-solar);
+        }
+        .comparison-btn.active {
+            color: white;
+            background-color: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+        .comparison-content {
+            display: none; /* Oculto por defecto */
+            animation: fadeIn 0.5s ease;
+        }
+        .comparison-content.active {
+            display: block; /* Visible */
+        }
+        
+        /* Box para comparativa */
+        .feature-box {
+            background-color: var(--background-light);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            height: 100%; /* Asegura misma altura */
+        }
+        .feature-box:hover {
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.07);
+            transform: translateY(-2px);
+        }
+
+        /* Callout box para ejemplos */
+        .example-callout {
+            background-color: #FFFBEB; /* Crema/amarillo muy claro */
+            border: 1px solid #FDE68A; /* Borde amarillo claro */
+            border-left: 4px solid var(--primary-solar); /* Borde izquierdo grueso */
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+        }
+        .example-callout strong {
+            color: #B45309; /* Marrón/naranja oscuro */
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* Checklist en Conclusiones */
+        .conclusion-checklist li {
+            position: relative;
+            padding-left: 2.5rem;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        .conclusion-checklist li i {
+            position: absolute;
+            left: 0;
+            top: 4px;
+            font-size: 1.5rem;
+        }
+        .conclusion-checklist li strong {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+
+    </style>
+</head>
+
+<body>
+    <!-- PAGE 1: COVER -->
+    <div id="page-cover" class="page active">
+        <section class="relative min-h-screen flex flex-col justify-center bg-background-light overflow-hidden">
+            <!-- Imagen de fondo difuminada -->
+            <div class="absolute top-0 left-0 w-full h-1/2 bg-[url('https://placehold.co/1920x600/2563EB/FFFFFF?text=Añadir+imagen+de+fondo+(ej.+parque+solar)')] bg-cover bg-center opacity-10 filter blur-sm z-0"></div>
+            
+            <div class="container mx-auto px-6 py-16 text-center relative z-10">
+                <!-- Logo -->
+                <div class="mb-6">
+                    <img src="https://placehold.co/300x80/EEEEEE/6B7280?text=LOGO+DEL+INSTITUTO" alt="Logo Instituto" class="h-16 mx-auto">
+                </div>
+
+                <h1 class="text-4xl md:text-6xl font-extrabold my-4" style="font-family: 'Montserrat', sans-serif;">
+                    <span class="block text-dark-text">Generación Eléctrica Solar</span>
+                </h1>
+                <p class="text-lg md:text-xl font-light max-w-4xl mx-auto my-6 text-light-text">
+                    Análisis Integral del Diseño, Dimensionamiento, Puesta en Marcha y Estrategias de Mantenimiento de Plantas Fotovoltaicas.
+                </p>
+                <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mt-12">
+                    <button data-target="page-solar" class="page-link bg-white border border-gray-200 p-8 rounded-xl shadow-lg hover:shadow-xl hover:border-primary-blue transition-all text-left group flex items-start space-x-4">
+                        <i class="fas fa-cogs text-5xl text-primary-blue group-hover:scale-110 transition-transform flex-shrink-0"></i>
+                        <div>
+                            <h3 class="text-2xl font-bold mb-2">Análisis: Generación Solar</h3>
+                            <p class="text-light-text">Exploración del dimensionamiento, comisionamiento y las claves del Mantenimiento (O&M).</p>
+                        </div>
+                    </button>
+                    <button data-target="page-conclusiones" class="page-link bg-primary-solar text-white p-8 rounded-xl shadow-lg hover:bg-yellow-500 hover:shadow-xl transition-all flex items-start space-x-4 group">
+                        <i class="fas fa-bookmark text-5xl group-hover:scale-110 transition-transform flex-shrink-0"></i>
+                        <div>
+                            <h3 class="text-2xl font-bold mb-2">Conclusiones y Cierre Técnico</h3>
+                            <p class="text-white text-opacity-90">Resumen de puntos clave, métricas de gestión y *takeaways* de la presentación.</p>
+                        </div>
+                    </button>
+                </div>
+                <div id="equipo-caratula" class="max-w-6xl mx-auto mt-16 text-light-text">
+                    <h3 class="text-xl font-semibold mb-4 text-dark-text">Presentado Por</h3>
+                    <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-lg font-medium">
+                        <!-- Nombres inyectados por JS -->
+                    </div>
+                </div>
+                <div class="mt-16 text-sm text-gray-400 border-t border-gray-200 pt-6 max-w-md mx-auto">
+                    <p><strong>Materia:</strong> [Nombre de tu Materia]</p>
+                    <p><strong>Docente:</strong> [Nombre de tu Docente] | <strong>Curso:</strong> [Tu Curso]</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- PAGE 2: PRESENTACIÓN SOLAR -->
+    <div id="page-solar" class="page presentation-page">
+        <header class="sticky top-0 z-50">
+           <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+                 <div class="flex items-center space-x-4">
+                    <button data-target="page-cover" class="page-link p-2 text-gray-500 hover:text-primary-blue" title="Volver al inicio"><i class="fas fa-home"></i></button>
+                    <h1 class="text-xl font-bold" style="font-family: 'Montserrat', sans-serif;">PRESENTACIÓN: PLANTA SOLAR FOTOVOLTAICA</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="presentation-mode-btn p-2 text-gray-500 hover:text-primary-solar" title="Modo Presentación"><i class="play-icon fas fa-play"></i><i class="stop-icon fas fa-stop hidden"></i></button>
+                    <button class="fullscreen-btn p-2 text-gray-500 hover:text-primary-solar" title="Pantalla Completa"><i class="fas fa-expand"></i></button>
+                </div>
+            </nav>
+            <div class="presentation-nav-container hidden bg-white border-t border-b border-gray-200">
+                <div class="presentation-progress-bar w-0 h-1 bg-primary-solar transition-all duration-300"></div>
+                <div class="presentation-nav-tree container mx-auto px-6 py-2 flex justify-center items-center text-xs text-gray-600 gap-x-4 overflow-x-auto whitespace-nowrap"></div>
+            </div>
+        </header>
+        <main>
+            <!-- SLIDE 1: INTRODUCCIÓN GENERAL -->
+            <section data-title="Intro" class="slide">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12">
+                        <h2 class="section-title">¿Qué es la Generación Fotovoltaica?</h2>
+                        <p class="section-subtitle mt-4">La energía solar fotovoltaica (PV) convierte la radiación solar en electricidad de corriente continua (DC) mediante el efecto fotoeléctrico en celdas de silicio.</p>
+                    </div>
+                    <div class="card grid lg:grid-cols-3 gap-8 text-center">
+                        <div class="feature-box">
+                            <i class="fas fa-sun text-5xl text-primary-solar mb-4"></i>
+                            <h3 class="font-bold text-xl mb-2">Monocristalino</h3>
+                            <p class="text-sm text-light-text">Mayor eficiencia (>20%). Hechos de un solo cristal de silicio. Color negro uniforme.</p>
+                        </div>
+                        <div class="feature-box">
+                            <i class="fas fa-th-large text-5xl text-primary-blue mb-4"></i>
+                            <h3 class="font-bold text-xl mb-2">Policristalino</h3>
+                            <p class="text-sm text-light-text">Eficiencia media (~15-18%). Más económicos. Color azul veteado.</p>
+                        </div>
+                        <div class="feature-box">
+                            <i class="fas fa-layer-group text-5xl text-light-text mb-4"></i>
+                            <h3 class="font-bold text-xl mb-2">Película Delgada</h3>
+                            <p class="text-sm text-light-text">Menor eficiencia, pero flexibles. Útiles para integración en edificios (BIPV).</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 2: COMPONENTES (INTERACTIVO) -->
+            <section data-title="Componentes" class="slide">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Componentes Clave del Sistema</h2><p class="section-subtitle mt-4">Cada elemento cumple un rol crítico en la conversión, gestión y seguridad de la energía generada.</p></div>
+                    <div class="card w-full max-w-6xl mx-auto">
+                        <!-- Pestañas de Navegación -->
+                        <div class="tab-btn-container flex flex-wrap justify-center">
+                            <button class="tab-btn active" data-target="tab-comp-1"><i class="fas fa-solar-panel mr-2"></i>Módulos PV</button>
+                            <button class="tab-btn" data-target="tab-comp-2"><i class="fas fa-wave-square mr-2"></i>Inversores</button>
+                            <button class="tab-btn" data-target="tab-comp-3"><i class="fas fa-cogs mr-2"></i>Estructuras y Cableado</button>
+                            <button class="tab-btn" data-target="tab-comp-4"><i class="fas fa-bolt mr-2"></i>Protecciones y Monitoreo</button>
+                        </div>
+                        
+                        <!-- Contenido de las Pestañas -->
+                        <div class="mt-8 min-h-[300px]">
+                            <!-- Pestaña 1: Módulos -->
+                            <div id="tab-comp-1" class="tab-content active">
+                                <div class="grid md:grid-cols-2 gap-8 items-center">
+                                    <div>
+                                        <h3 class="font-bold text-2xl text-primary-blue mb-4">Módulos Fotovoltaicos (Paneles)</h3>
+                                        <p class="text-light-text mb-4">El corazón del sistema. Conectados en serie (strings) para sumar tensión y en paralelo para sumar corriente.</p>
+                                        <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                            <li><strong>Parámetros Clave (STC):</strong> Voc (Tensión Circuito Abierto), Isc (Corriente Cortocircuito), Vmp, Imp.</li>
+                                            <li><strong>Efecto de la Temperatura:</strong> La tensión (Voc/Vmp) disminuye drásticamente al aumentar la temperatura.</li>
+                                            <li><strong>Diodos de Bypass:</strong> Mitigan pérdidas por sombras parciales.</li>
+                                            <li><strong>Tecnologías Emergentes:</strong> Paneles bifaciales y PERC.</li>
+                                        </ul>
+                                    </div>
+                                    <img src="https://placehold.co/400x300/F59E0B/FFFFFF?text=Panel+bifacial" alt="Panel Solar" class="w-full rounded-lg shadow-md clickable-image">
+                                </div>
+                            </div>
+                            <!-- Pestaña 2: Inversores -->
+                            <div id="tab-comp-2" class="tab-content">
+                                <div class="grid md:grid-cols-2 gap-8 items-center">
+                                    <div>
+                                        <h3 class="font-bold text-2xl text-primary-blue mb-4">Inversores (On-Grid / Off-Grid / Híbridos)</h3>
+                                        <p class="text-light-text mb-4">El cerebro del sistema. Convierten la DC de los paneles en Corriente Alterna (AC) útil y sincronizada con la red.</p>
+                                        <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                            <li><strong>MPPT (Seguidor de Punto de Máxima Potencia):</strong> Algoritmo para extraer siempre la máxima potencia.</li>
+                                            <li><strong>Inversor de String (On-Grid):</strong> El más común, recibe varios strings.</li>
+                                            <li><strong>Microinversor:</strong> Uno por panel, optimiza individualmente.</li>
+                                            <li><strong>Híbrido:</strong> Gestiona red, paneles y baterías.</li>
+                                        </ul>
+                                    </div>
+                                    <img src="https://placehold.co/400x300/2563EB/FFFFFF?text=Inversor+de+String" alt="Inversor Solar" class="w-full rounded-lg shadow-md clickable-image">
+                                </div>
+                            </div>
+                            <!-- Pestaña 3: Estructuras y Cableado -->
+                            <div id="tab-comp-3" class="tab-content">
+                                <h3 class="font-bold text-2xl text-primary-blue mb-4">Estructuras y Cableado</h3>
+                                <p class="text-light-text mb-4">La infraestructura física que garantiza la durabilidad, seguridad y eficiencia en la conducción de la energía.</p>
+                                <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                    <li><strong>Estructuras:</strong> Fijas (optimización anual) o seguidores (trackers) que siguen al sol (+20-30% energía, más O&M).</li>
+                                    <li><strong>Materiales:</strong> Aluminio anodizado o acero galvanizado para resistir la corrosión.</li>
+                                    <li><strong>Cableado DC:</strong> Cable solar especializado (protección UV, doble aislamiento) para minimizar caídas de tensión (< 2-3%).</li>
+                                    <li><strong>Cableado AC:</strong> Dimensionado para la potencia de salida del inversor.</li>
+                                </ul>
+                            </div>
+                            <!-- Pestaña 4: Protecciones -->
+                            <div id="tab-comp-4" class="tab-content">
+                                <h3 class="font-bold text-2xl text-primary-blue mb-4">Protecciones y Monitoreo</h3>
+                                <p class="text-light-text mb-4">Elementos esenciales para la seguridad de los equipos y las personas, y para la gestión de la planta.</p>
+                                <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                    <li><strong>Protecciones DC:</strong> Fusibles (gPV), Seccionadores y SPDs (protectores contra sobretensiones).</li>
+                                    <li><strong>Protecciones AC:</strong> Interruptores termomagnéticos, diferenciales y SPDs de AC.</li>
+                                    <li><strong>Puesta a Tierra (PAT):</strong> Conexión de todas las partes metálicas (paneles, estructuras, carcasas) a tierra.</li>
+                                    <li><strong>Monitoreo (SCADA):</strong> Plataforma que registra producción, irradiancia, temperatura y estado. Fundamental para el Mantenimiento Predictivo.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 3: DIMENSIONAMIENTO -->
+            <section data-title="Dimensionamiento" class="slide">
+                 <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Dimensionamiento Ingenieril</h2><p class="section-subtitle mt-4">Proceso crítico para asegurar que los componentes operen en sus rangos seguros y eficientes bajo todas las condiciones climáticas.</p></div>
+                    <div class="card grid lg:grid-cols-2 gap-8 items-start">
+                        <div class="bg-background-light p-6 rounded-lg border border-gray-200">
+                            <h3 class="font-bold text-2xl text-primary-blue mb-4">Estudios Previos y Layout</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-3"><i class="fas fa-map-marked-alt text-2xl icon-dimensionamiento mt-1"></i><div><strong class="text-dark-text">Análisis de Sitio:</strong> Evaluación del recurso solar (Irradiancia GHI, DNI) usando bases de datos (PVGIS, NASA) y la demanda energética (kWh) a cubrir.</div></div>
+                                <div class="flex items-start gap-3"><i class="fas fa-ruler-combined text-2xl icon-dimensionamiento mt-1"></i><div><strong class="text-dark-text">Diseño de Layout:</strong> Optimización de orientación (Norte en Hemisferio Sur) e inclinación (cercana a la latitud).</div></div>
+                                <div class="flex items-start gap-3"><i class="fas fa-cloud-sun text-2xl icon-dimensionamiento mt-1"></i><div><strong class="text-dark-text">Análisis de Sombras:</strong> Cálculo de separación entre filas (pitch) para evitar sombreado mutuo, especialmente en el solsticio de invierno.</div></div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-2xl text-primary-blue mb-4">Cálculo Eléctrico de Strings</h3>
+                            <p class="text-light-text mb-4">El desafío es respetar los límites del inversor en el peor escenario (frío extremo) y el mejor escenario (calor extremo).</p>
+                            <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                <li><strong>Límite de Tensión (Frío):</strong> La Voc (Tensión de Circuito Abierto) de un panel aumenta a medida que baja la temperatura. Se debe calcular la Voc máxima del string en la temperatura mínima histórica del sitio y asegurar que sea MENOR a la Tensión DC máxima del inversor.</li>
+                                <li><strong>Límite de Tensión (Calor):</strong> La Vmp (Tensión de Máxima Potencia) del panel disminuye con el calor. Se debe calcular la Vmp mínima del string a máxima temperatura y asegurar que sea MAYOR al rango mínimo de MPPT del inversor.</li>
+                                <li><strong>Límite de Corriente:</strong> La corriente (Isc) total de los strings en paralelo debe ser MENOR a la corriente máxima de entrada DC del inversor.</li>
+                            </ul>
+                        </div>
+                        <!-- Ejemplo "El Quemado" -->
+                        <div class="lg:col-span-2 example-callout">
+                            <strong class="text-lg"><i class="fas fa-map-pin mr-2"></i>Nota de Campo: Caso "El Quemado" (Mendoza)</strong>
+                            <p class="text-dark-text mt-2">Para maximizar el rendimiento, el diseño de "El Quemado" (305 MW) utiliza **módulos bifaciales** (aprovechan el albedo del suelo claro) sobre **trackers de 1 eje**. Estos trackers emplean *backtracking* para evitar auto-sombra al amanecer/atardecer y se aplica un **ratio DC/AC > 1.1** (sobredimensionamiento DC) para optimizar el uso del inversor y reducir el *clipping*.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 4: PUESTA EN MARCHA (COMISIONAMIENTO) -->
+            <section data-title="Puesta en Marcha" class="slide">
+                 <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Puesta en Marcha (IEC 62446-1)</h2><p class="section-subtitle mt-4">Verificación y pruebas para garantizar que la planta fue instalada correctamente, es segura y opera según el diseño.</p></div>
+                    <div class="card max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-2xl font-bold mb-6 text-center text-primary-blue">Ensayos Eléctricos Fundamentales</h3>
+                            <div class="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                                <div class="flex items-start gap-4"><i class="fas fa-infinity text-primary-blue w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Continuidad de PE</strong><p class="text-sm text-light-text">(Criterio: < 0.2 Ω)</p></div></div>
+                                <div class="flex items-start gap-4"><i class="fas fa-shield-alt text-primary-blue w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Resistencia de Aislamiento (Riso)</strong><p class="text-sm text-light-text">(Criterio: ≥ 1 MΩ)</p></div></div>
+                                <div class="flex items-start gap-4"><i class="fas fa-check-circle text-primary-blue w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Prueba de Polaridad</strong><p class="text-sm text-light-text">Verificar +/– en MPPT.</p></div></div>
+                                <div class="flex items-start gap-4"><i class="fas fa-tachometer-alt text-primary-blue w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Medición de Tensión (Voc)</strong><p class="text-sm text-light-text">Comparar strings vs T°.</p></div></div>
+                                <div class="flex items-start gap-4"><i class="fas fa-bolt text-primary-blue w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Medición de Corriente (Isc)</strong><p class="text-sm text-light-text">(Criterio: coherencia ±5%).</p></div></div>
+                                <div class="flex items-start gap-4"><i class="fas fa-power-off text-primary-blue w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Prueba Funcional Anti-Isla</strong><p class="text-sm text-light-text">Verificar desconexión.</p></div></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <img src="https://placehold.co/400x300/2563EB/FFFFFF?text=Técnico+con+Megóhmetro" alt="Prueba de Riso" class="w-full rounded-lg shadow-md clickable-image max-w-sm">
+                            <p class="text-sm text-light-text mt-2 text-center">Técnico realizando una prueba de Resistencia de Aislamiento (Riso).</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SLIDE 5: FOCO EN MANTENIMIENTO -->
+            <section data-title="O&M" class="slide">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Operación y Mantenimiento (O&M)</h2><p class="section-subtitle mt-4">El pilar fundamental para asegurar la rentabilidad y la vida útil (+25 años) de la planta. Se divide en tres categorías principales.</p></div>
+                    <div class="card grid lg:grid-cols-3 gap-8 text-center">
+                        <div class="feature-box">
+                            <i class="fas fa-shield-alt text-5xl icon-mantenimiento mb-4"></i>
+                            <h3 class="font-bold text-xl mb-2">Mantenimiento Preventivo</h3>
+                            <p class="text-sm text-light-text">Acciones PROACTIVAS y programadas. Inspecciones, limpieza y reaprietes para EVITAR que ocurran las fallas.</p>
+                        </div>
+                        <div class="feature-box">
+                            <i class="fas fa-wrench text-5xl icon-correctivo mb-4"></i>
+                            <h3 class="font-bold text-xl mb-2">Mantenimiento Correctivo</h3>
+                            <p class="text-sm text-light-text">Acciones REACTIVAS. Reparación de fallas una vez que han ocurrido (ej. un panel roto, un inversor en falla).</p>
+                        </div>
+                        <div class="feature-box">
+                            <i class="fas fa-chart-line text-5xl icon-predictivo mb-4"></i>
+                            <h3 class="font-bold text-xl mb-2">Mantenimiento Predictivo</h3>
+                            <p class="text-sm text-light-text">Acciones PROACTIVAS basadas en datos. Monitoreo y análisis para PREDECIR una falla antes de que ocurra.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 6: MANTENIMIENTO PREVENTIVO (DETALLE) -->
+            <section data-title="M. Preventivo" class="slide">
+                 <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title"><i class="fas fa-shield-alt text-accent-green"></i> M. Preventivo (Detalle)</h2><p class="section-subtitle mt-4">"Conservar para no reparar". Tareas programadas (anuales/semestrales) para mantener la planta en condiciones óptimas.</p></div>
+                    <div class="card max-w-6xl mx-auto">
+                         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            
+                            <div class="bg-background-light p-4 rounded-lg border">
+                                <h4 class="font-bold text-lg mb-2 text-accent-green">Campo FV — DC</h4>
+                                <ul class="list-disc list-inside text-sm space-y-1 text-dark-text">
+                                    <li>Inspección visual (IEC 62446-1)</li>
+                                    <li>Limpieza de módulos (Soiling)</li>
+                                    <li>Par de apriete en estructuras/bornes</li>
+                                    <li>Chequeo de conectores MC4</li>
+                                    <li>Inspección cajas combinadoras DC</li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-background-light p-4 rounded-lg border">
+                                <h4 class="font-bold text-lg mb-2 text-accent-green">Inversores / AC</h4>
+                                <ul class="list-disc list-inside text-sm space-y-1 text-dark-text">
+                                    <li>Limpieza de filtros y ventiladores</li>
+                                    <li>Verificación flujo de aire y disipadores</li>
+                                    <li>Actualización de Firmware / Config.</li>
+                                    <li>Registro de eventos y alarmas</li>
+                                    <li>Reapriete de tableros AC y SPD</li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-background-light p-4 rounded-lg border">
+                                <h4 class="font-bold text-lg mb-2 text-accent-green">Estructura / Varios</h4>
+                                <ul class="list-disc list-inside text-sm space-y-1 text-dark-text">
+                                    <li>Inspección de corrosión y anclajes</li>
+                                    <li>Control de vegetación y drenajes</li>
+                                    <li>Continuidad equipotencial (PE)</li>
+                                    <li>Calibración piranómetro (SCADA)</li>
+                                    <li>O&M de Trackers (lubricación, stow)</li>
+                                </ul>
+                            </div>
+                         </div>
+                         <!-- Ejemplo "El Quemado" -->
+                         <div class="example-callout">
+                            <strong class="text-lg"><i class="fas fa-map-pin mr-2"></i>Nota de Campo: Preventivo en "El Quemado"</strong>
+                            <p class="text-dark-text mt-2">En un parque con trackers como "El Quemado", el preventivo es más intensivo. Se vuelve crítico el **O&M de Trackers** (alineación, lubricación, prueba de posición de defensa o *stow* por viento) y la **limpieza de módulos se decide por *soiling ratio*** (pérdida medida) en lugar de un calendario fijo, para optimizar el costo del agua.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 7: MANTENIMIENTO CORRECTIVO (DETALLE) -->
+            <section data-title="M. Correctivo" class="slide">
+                 <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title"><i class="fas fa-wrench text-red-500"></i> M. Correctivo (Reactivo)</h2><p class="section-subtitle mt-4">Actuación reactiva para solucionar averías. El objetivo es minimizar el tiempo de inactividad (Downtime) y la pérdida de producción.</p></div>
+                    <div class="card max-w-5xl mx-auto">
+                        <h3 class="text-2xl font-bold mb-6 text-center text-red-600">Ejemplos de Intervención</h3>
+                         <div class="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                             <div class="flex items-start gap-4 p-4"><i class="fas fa-exclamation-circle icon-correctivo w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Reposición de Fusibles gPV</strong><p class="text-sm text-light-text">Implica investigar el origen de la sobrecorriente (corto, sombra extrema) antes de reponer.</p></div></div>
+                             <div class="flex items-start gap-4 p-4"><i class="fas fa-bolt icon-correctivo w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Cambio de Cartuchos SPD</strong><p class="text-sm text-light-text">Reemplazo de protectores contra sobretensión disparados (fin de vida) tras una tormenta.</p></div></div>
+                             <div class="flex items-start gap-4 p-4"><i class="fas fa-plug-circle-xmark icon-correctivo w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Re-terminación de Conectores</strong><p class="text-sm text-light-text">Arreglo de bornes o MC4 recalentados, asegurando crimpado y compatibilidad.</p></div></div>
+                             <div class="flex items-start gap-4 p-4"><i class="fas fa-solar-panel icon-correctivo w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Swap de Módulos</strong><p class="text-sm text-light-text">Reemplazo de paneles con vidrio roto, PID severo o hot-spots persistentes.</p></div></div>
+                             <div class="flex items-start gap-4 p-4"><i class="fas fa-server icon-correctivo w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Reparación de Inversor</strong><p class="text-sm text-light-text">Reemplazo de kits de ventiladores, placas de control o módulos de potencia (MTTR 2-6h).</p></div></div>
+                             <div class="flex items-start gap-4 p-4"><i class="fas fa-compass icon-correctivo w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Avería de Tracker</strong><p class="text-sm text-light-text">Cambio de motor/actuador o tarjeta de control y posterior realineado.</p></div></div>
+                         </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SLIDE 8: MANTENIMIENTO PREDICTIVO (DETALLE) -->
+            <section data-title="M. Predictivo" class="slide">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title"><i class="fas fa-chart-line text-primary-solar"></i> M. Predictivo (Datos)</h2><p class="section-subtitle mt-4">Usar datos y tecnología para anticiparse a la falla, optimizando costos y recursos antes de que el problema escale.</p></div>
+                    <div class="card max-w-5xl mx-auto">
+                         <div class="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                            <!-- Contenido de texto -->
+                            <div>
+                                <div class="flex items-start gap-4 p-4"><i class="fas fa-satellite-dish icon-predictivo w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Análisis PR y String-level (SCADA)</strong><p class="text-sm text-light-text">Monitoreo continuo del Performance Ratio (PR) y comparación de strings. Caídas en el PR o Z-score disparan revisiones.</p></div></div>
+                                <div class="flex items-start gap-4 p-4"><i class="fas fa-chart-area icon-predictivo w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Trazado de Curvas I-V</strong><p class="text-sm text-light-text">Análisis de degradación (LID/PID), mismatch y pérdidas. Se compara la curva real (corregida a STC) vs la teórica.</p></div></div>
+                                <div class="flex items-start gap-4 p-4"><i class="fas fa-percent icon-predictivo w-8 text-center mt-1 text-2xl"></i><div><strong class="text-dark-text">Índice de Ensuciamiento (Soiling)</strong><p class="text-sm text-light-text">Mide la pérdida por suciedad (panel limpio vs. sucio). Dispara la limpieza cuando la pérdida supera un umbral (ej. 2-3%).</p></div></div>
+                            </div>
+                            <!-- Imágenes -->
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-4 p-4">
+                                    <i class="fas fa-thermometer-half icon-predictivo w-8 text-center mt-1 text-2xl"></i>
+                                    <div>
+                                        <strong class="text-dark-text">Termografía IR (IEC 62446-3)</strong>
+                                        <p class="text-sm text-light-text mb-2">Detección de hot-spots (ΔT ≥10 K = crítico), diodos en bypass, conectores calientes.</p>
+                                        <img src="https://placehold.co/300x200/A00000/FFFFFF?text=Hotspot+en+Panel+(Termografía)" alt="Termografía" class="rounded-lg shadow-md clickable-image w-full">
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4 p-4">
+                                    <i class="fas fa-lightbulb icon-predictivo w-8 text-center mt-1 text-2xl"></i>
+                                    <div>
+                                        <strong class="text-dark-text">Electroluminiscencia (EL)</strong>
+                                        <p class="text-sm text-light-text mb-2">"Radiografía" del panel. Detecta microfisuras, dedos abiertos y shunts invisibles.</p>
+                                        <img src="https://placehold.co/300x200/000000/FFFFFF?text=Imagen+EL+(Microfisuras)" alt="Electroluminiscencia" class="rounded-lg shadow-md clickable-image w-full">
+                                    </div>
+                                </div>
+                            </div>
+                         </div>
+                         <!-- Ejemplo "El Quemado" -->
+                         <div class="example-callout">
+                            <strong class="text-lg"><i class="fas fa-map-pin mr-2"></i>Nota de Campo: Predictivo en "El Quemado"</strong>
+                            <p class="text-dark-text mt-2">La planta se opera 24x7 desde el **Centro de Operación Remoto (COR)**. El SCADA analiza **KPIs (IEC 61724-1)** como el PR y *string outliers* en tiempo real. Esto se complementa con **Termografía IR semestral** y **Curvas I-V anuales por muestra**, permitiendo detectar degradación o fallas incipientes antes de que impacten la producción.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SLIDE 9: KPIS Y DIAGNÓSTICO -->
+            <section data-title="KPIs y Ensayos" class="slide">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Diagnóstico, KPIs y Herramientas</h2><p class="section-subtitle mt-4">La gestión profesional de O&M se basa en mediciones objetivas, umbrales claros y el equipamiento adecuado.</p></div>
+                    <div class="card w-full max-w-6xl mx-auto">
+                        <!-- Pestañas de Navegación -->
+                        <div class="tab-btn-container flex flex-wrap justify-center">
+                            <button class="tab-btn active" data-target="tab-kpi-1"><i class="fas fa-tachometer-alt mr-2"></i>KPIs y Umbrales</button>
+                            <button class="tab-btn" data-target="tab-kpi-2"><i class="fas fa-calendar-alt mr-2"></i>Resumen de Frecuencias</button>
+                            <button class="tab-btn" data-target="tab-kpi-3"><i class="fas fa-toolbox mr-2"></i>Herramientas y Repuestos</button>
+                            <button class="tab-btn" data-target="tab-kpi-4"><i class="fas fa-flask mr-2"></i>Otros Ensayos</button>
+                        </div>
+                        
+                        <!-- Contenido de las Pestañas -->
+                        <div class="mt-8 min-h-[300px]">
+                            <!-- Pestaña 1: KPIs y Umbrales -->
+                            <div id="tab-kpi-1" class="tab-content active">
+                                <h3 class="font-bold text-2xl text-primary-blue mb-4">KPIs y Umbrales Operativos</h3>
+                                <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                    <li><strong>Disponibilidad (sin cortes externos):</strong> Objetivo ≥ 99%.</li>
+                                    <li><strong>Performance Ratio (PR):</strong> Sitio-dependiente. Investigar caídas > 2-3 puntos vs histórico. (Objetivo: 0.75 – 0.85).</li>
+                                    <li><strong>Umbral Termográfico (ΔT IR):</strong> ΔT ≥ 10 K vs celdas vecinas = Crítico (accionar ya); ΔT 5–10 K = Planificar correctivo.</li>
+                                    <li><strong>Resistencia de Aislamiento (Riso):</strong> Mantener > 5 MΩ; Investigar y accionar si < 1 MΩ.</li>
+                                    <li><strong>Pérdida por Soiling:</strong> Umbral de limpieza típico: 2–3% de pérdida sostenida.</li>
+                                    <li><strong>MTTR (Tiempo Medio de Reparación):</strong> Objetivo < 6 horas para fallas de inversor.</li>
+                                </ul>
+                            </div>
+                            <!-- Pestaña 2: Frecuencias -->
+                            <div id="tab-kpi-2" class="tab-content">
+                                <h3 class="font-bold text-2xl text-primary-blue mb-4">Frecuencias Orientativas (Resumen)</h3>
+                                <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                    <li><strong>Diario / Semanal:</strong> Monitoreo SCADA (Alarmas, PR, strings outliers).</li>
+                                    <li><strong>Trimestral:</strong> Limpieza planificada (o según soiling); filtros de inversor; aprietes críticos; cajas DC/AC.</li>
+                                    <li><strong>Semestral:</strong> Termografía IR completa; inspección de trackers; estado de SPD.</li>
+                                    <li><strong>Anual:</strong> Curvas I-V (por muestra 5-10%); test de Riso; calibración de sensórica (piranómetro); auditoría de seguridad.</li>
+                                    <li><strong>Bienal:</strong> Muestreo de Electroluminiscencia (EL) en plantas grandes.</li>
+                                </ul>
+                            </div>
+                            <!-- Pestaña 3: Herramientas y Repuestos -->
+                            <div id="tab-kpi-3" class="tab-content">
+                                <div class="grid grid-cols-2 gap-8 items-start">
+                                    <div>
+                                        <h3 class="font-bold text-2xl text-primary-blue mb-4">Herramientas Mínimas</h3>
+                                        <ul class="list-disc list-inside space-y-2 text-dark-text text-sm">
+                                            <li>Megóhmetro (1000V)</li>
+                                            <li>Trazador de Curvas I-V</li>
+                                            <li>Cámara Termográfica (IR)</li>
+                                            <li>Pinza Amperimétrica DC TRMS</li>
+                                            <li>Torquímetro (llave dinamométrica)</li>
+                                            <li>Telurímetro (medidor de PAT)</li>
+                                            <li>Analizador de Redes AC</li>
+                                            <li>EPP Eléctrico (Arc Flash) y de Altura</li>
+                                        </ul>
+                                        <img src="https://placehold.co/300x200/6B7280/FFFFFF?text=Herramientas+de+O&M" alt="Herramientas" class="rounded-lg shadow-md clickable-image w-full mt-4">
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-2xl text-primary-blue mb-4">Repuestos Críticos</h3>
+                                        <ul class="list-disc list-inside space-y-2 text-dark-text text-sm">
+                                            <li>Fusibles gPV (varios amperajes)</li>
+                                            <li>Conectores MC4 (macho/hembra)</li>
+                                            <li>Cartuchos SPD (DC y AC)</li>
+                                            <li>Kits de ventiladores para inversor</li>
+                                            <li>Placas de control / I-O (Inversor)</li>
+                                            <li>Seccionadores DC</li>
+                                            <li>Módulos PV (0.2–0.5% del total)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Pestaña 4: Otros Ensayos -->
+                            <div id="tab-kpi-4" class="tab-content">
+                                <h3 class="font-bold text-2xl text-primary-blue mb-4">Otros Ensayos Específicos</h3>
+                                <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                    <li><strong>Resistencia de Puesta a Tierra (PAT):</strong> Medición con Telurímetro (Método Wenner o 62%). (Objetivo: < 10 Ω, según estudio).</li>
+                                    <li><strong>Pull-out Test de Anclajes:</strong> Ensayo de tracción en anclajes de techo/suelo para verificar carga de viento.</li>
+                                    <li><strong>Integridad de Sellos:</strong> Pruebas de estanqueidad en pasantes de cubierta para evitar filtraciones.</li>
+                                    <li><strong>Ensayo de Trackers (IEC 62817):</strong> Verificación de alineación, consumo de motores y prueba de posición de defensa (stow).</li>
+                                    <li><strong>Curva Volt/Var:</strong> Verificación de la respuesta dinámica del inversor a consignas de la red.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SLIDE 10: CONTEXTO ARGENTINA -->
+            <section data-title="Contexto" class="slide">
+                 <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Contexto en Argentina</h2><p class="section-subtitle mt-4">El marco normativo y los programas de fomento son claves para el desarrollo de la energía solar en el país.</p></div>
+                    <div class="card grid lg:grid-cols-2 gap-8 items-start">
+                        <div class="bg-background-light p-6 rounded-lg border border-gray-200">
+                            <h3 class="font-bold text-2xl text-primary-blue mb-4">Generación Distribuida (Ley 27.424)</h3>
+                            <p class="text-light-text mb-4">Permite a usuarios (residenciales, comerciales) generar su propia energía e inyectar los excedentes a la red, recibiendo una compensación.</p>
+                            <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                <li><strong>Usuario-Generador (Prosumer):</strong> Consume y genera energía.</li>
+                                <li><strong>Medidor Bidireccional:</strong> Mide tanto la energía consumida como la inyectada.</li>
+                                <li><strong>Balance Neto:</strong> La energía inyectada se descuenta de la consumida en la factura.</li>
+                                <li><strong>Incentivos:</strong> Históricamente incluyó créditos fiscales (FODIS) para fomentar la adopción.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-2xl text-primary-blue mb-4">Proyectos a Gran Escala (RenovAr)</h3>
+                            <p class="text-light-text mb-4">Programas de subastas públicas (como RenovAr) que permitieron la construcción de grandes parques solares (Utility Scale) con contratos de venta de energía a largo plazo.</p>
+                            <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                <li><strong>Ejemplo Emblemático:</strong> Parque Solar Cauchari (Jujuy), con 315 MW de potencia, uno de los más grandes de Latinoamérica (operativo 2020).</li>
+                                <li><strong>Objetivo:</strong> Diversificar la matriz energética nacional y cumplir con las metas de energías renovables (Ley 27.191).</li>
+                                <li><strong>Impacto:</strong> Impulsó un crecimiento exponencial de la capacidad solar instalada en el país.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 11: CASO DE ESTUDIO (NUEVO) -->
+            <section data-title="Caso Estudio" class="slide">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Caso de Estudio: Parque Solar "El Quemado"</h2><p class="section-subtitle mt-4">Ejemplo de un proyecto Utility Scale en Mendoza (305 MW), operado remotamente por YPF Luz.</p></div>
+                    <div class="card grid lg:grid-cols-2 gap-8 items-start">
+                        <div class="bg-background-light p-6 rounded-lg border border-gray-200">
+                            <h3 class="font-bold text-2xl text-primary-blue mb-4">Datos Clave y Dimensionamiento</h3>
+                            <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                <li><strong>Potencia:</strong> 305 MW (en dos etapas).</li>
+                                <li><strong>Tecnología:</strong> ~510,000 módulos bifaciales con trackers de 1 eje.</li>
+                                <li><strong>Ubicación:</strong> Las Heras, Mendoza (Alta irradiación y albedo).</li>
+                                <li><strong>Rendimiento:</strong> Factor de Capacidad (CF) estimado: 31.4%.</li>
+                                <li><strong>Diseño:</strong> Uso de *Backtracking* para evitar auto-sombra y *ratio DC/AC > 1.1* para optimizar inversores.</li>
+                                <li><strong>Producción:</strong> Estimada ~839 GWh/año (equiv. 233,000 hogares).</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-2xl text-primary-blue mb-4">Foco O&M del Caso Real</h3>
+                            <p class="text-light-text mb-4">La operación se gestiona 24x7 desde el COR (Centro de Operación Remoto).</p>
+                            <ul class="list-disc list-inside space-y-3 text-dark-text">
+                                <li><strong>Preventivo:</strong> Limpieza (basada en soiling ratio), par de apriete de trackers y grampas, O&M de trackers (lubricación, stow).</li>
+                                <li><strong>Predictivo:</strong> Termografía IR (semestral), Curvas I-V (anual por muestra), y análisis de KPIs (PR, string outliers) desde el SCADA.</li>
+                                <li><strong>Correctivo:</strong> Swap de módulos con hot-spots, reemplazo de fans de inversor, re-terminación de conectores.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 12: COMPARATIVA (NUEVO FORMATO SIDE-BY-SIDE) -->
+            <section data-title="Comparativa" class="slide">
+                 <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Comparativa de O&M y Rol en Red</h2><p class="section-subtitle mt-4">Contraste directo del foco de mantenimiento, costos y rol operativo de cada tecnología contra la Solar FV.</p></div>
+                    <div class="card w-full max-w-7xl mx-auto">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- Columna Izquierda: Solar (Fija) -->
+                            <div class="bg-background-light p-6 rounded-lg border-2 border-primary-solar">
+                                <h3 class="font-bold text-2xl text-primary-solar mb-4"><i class="fas fa-solar-panel mr-2"></i>Solar Fotovoltaica (Base)</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <strong class="block text-dark-text">LCOE (Costo):</strong>
+                                        <span class="text-light-text">Muy Bajo (29-73 USD/MWh)</span>
+                                    </div>
+                                    <div>
+                                        <strong class="block text-dark-text">Tiempo Construcción:</strong>
+                                        <span class="text-light-text">Muy Rápido (6-24 meses)</span>
+                                    </div>
+                                    <div>
+                                        <strong class="block text-dark-text">Emisiones (Ciclo Vida):</strong>
+                                        <span class="text-light-text">Muy Bajas (8-48 gCO2e/kWh)</span>
+                                    </div>
+                                    <div>
+                                        <strong classS="block text-dark-text">Foco O&M: Eléctrico (Estático)</strong>
+                                        <ul class="list-disc list-inside text-sm text-light-text pl-4 mt-1">
+                                            <li><strong class="text-dark-text">Preventivo:</strong> Limpieza (Soiling), reapriete de bornes, inspección visual.</li>
+                                            <li><strong class="text-dark-text">Predictivo:</strong> Termografía (IR), Curvas I-V, análisis de PR (SCADA).</li>
+                                            <li><strong class="text-dark-text">Correctivo:</strong> Swap de módulos/inversores, cambio de fusibles/SPD.</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <strong class="block text-dark-text">Ventaja Clave:</strong>
+                                        <span class="text-light-text">Bajo riesgo mecánico, modular, MTTR bajo.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Columna Derecha: Comparativas (Intercambiables) -->
+                            <div>
+                                <div class="comparison-btn-container mb-6">
+                                    <button class="comparison-btn active" data-comp-target="comp-eo"><i class="fas fa-wind mr-2"></i>Comparar vs. Eólica</button>
+                                    <button class="comparison-btn" data-comp-target="comp-hi"><i class="fas fa-water mr-2"></i>Comparar vs. Hidroeléctrica</button>
+                                    <button class="comparison-btn" data-comp-target="comp-cc"><i class="fas fa-fire mr-2"></i>Comparar vs. Térmica (Gas)</button>
+                                </div>
+
+                                <!-- Contenido Eólica -->
+                                <div id="comp-eo" class="comparison-content active">
+                                    <h3 class="font-bold text-2xl text-primary-blue mb-4">vs. Eólica Onshore</h3>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <strong class="block text-dark-text">LCOE:</strong>
+                                            <span class="text-light-text">Similar a FV (27-73 USD/MWh).</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Tiempo Construcción:</strong>
+                                            <span class="text-light-text">Rápido (12-36 meses), pero más lento que FV.</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Emisiones:</strong>
+                                            <span class="text-light-text">Muy Bajas (9-12 gCO2e/kWh).</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Foco O&M: Mecánico-Rotativo</strong>
+                                            <ul class="list-disc list-inside text-sm text-light-text pl-4 mt-1">
+                                                <li><strong class="text-dark-text">Preventivo:</strong> Lubricación (gearbox), par de apriete (palas/torre).</li>
+                                                <li><strong class="text-dark-text">Predictivo:</strong> Análisis de vibraciones (CMS), aceite, endoscopía.</li>
+                                                <li><strong class="text-dark-text">Correctivo:</strong> *Blade repair* (erosión), cambio de multiplicadora.</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Contraste Clave:</strong>
+                                            <span class="text-light-text">O&M mucho más complejo (altura, piezas rotativas) y MTTR mayor que FV.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Contenido Hidroeléctrica -->
+                                <div id="comp-hi" class="comparison-content">
+                                    <h3 class="font-bold text-2xl text-accent-green mb-4">vs. Hidroeléctrica</h3>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <strong class="block text-dark-text">LCOE:</strong>
+                                            <span class="text-light-text">Rango amplio (alto CAPEX inicial).</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Tiempo Construcción:</strong>
+                                            <span class="text-light-text">Muy Lento (3-7+ años) vs. meses de FV.</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Emisiones:</strong>
+                                            <span class="text-light-text">Bajas (11-24 gCO2e/kWh), pero dependen del sitio.</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Foco O&M: Hidro-Mecánico y Civil</strong>
+                                            <ul class="list-disc list-inside text-sm text-light-text pl-4 mt-1">
+                                                <li><strong class="text-dark-text">Preventivo:</strong> Inspección de turbinas, sellos, compuertas, limpieza de tomas.</li>
+                                                <li><strong class="text-dark-text">Predictivo:</strong> Monitoreo de cavitación, vibraciones de cojinetes.</li>
+                                                <li><strong class="text-dark-text">Correctivo:</strong> Recargue de álabes por cavitación, reparación de estatores.</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Contraste Clave:</strong>
+                                            <span class="text-light-text">Hidro es despachable (con embalse), FV no. Pero el O&M de Hidro implica paradas más largas y complejas.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Contenido Térmica (Gas) -->
+                                <div id="comp-cc" class="comparison-content">
+                                    <h3 class="font-bold text-2xl text-red-500 mb-4">vs. Térmica (Gas CCGT)</h3>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <strong class="block text-dark-text">LCOE:</strong>
+                                            <span class="text-light-text">Medio (45-108 USD/MWh), sensible al precio del gas.</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Tiempo Construcción:</strong>
+                                            <span class="text-light-text">Intermedio (2-3 años).</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Emisiones (Operación):</strong>
+                                            <span class="text-light-text">Muy Altas (430-490 gCO2e/kWh) vs. CERO de FV.</span>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Foco O&M: Termomecánico (Alta T°/P°)</strong>
+                                            <ul class="list-disc list-inside text-sm text-light-text pl-4 mt-1">
+                                                <li><strong class="text-dark-text">Preventivo:</strong> Borescope (turbina), filtros, caldera HRSG, válvulas.</li>
+                                                <li><strong class="text-dark-text">Predictivo:</strong> Vibraciones de rotor, química de agua/vapor (HRSG).</li>
+                                                <li><strong class="text-dark-text">Correctivo:</strong> Reemplazo de partes calientes (HGP), fugas en tubos HRSG.</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <strong class="block text-dark-text">Contraste Clave:</strong>
+                                            <span class="text-light-text">Térmica es despachable (firmeza). FV tiene OPEX casi nulo (sin combustible) y O&M de bajo riesgo.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <div class="presentation-arrows hidden">
+             <button class="prev-slide-btn fixed left-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-white/70 backdrop-blur-sm border rounded-full shadow-lg hover:bg-white disabled:opacity-30"><i class="fas fa-chevron-left text-xl"></i></button>
+             <button class="next-slide-btn fixed right-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-white/70 backdrop-blur-sm border rounded-full shadow-lg hover:bg-white"><i class="fas fa-chevron-right text-xl"></i></button>
+        </div>
+    </div>
+
+    <!-- PAGE 3: CONCLUSIONES (Ahora multi-slide) -->
+    <div id="page-conclusiones" class="page presentation-page">
+        <header class="sticky top-0 z-50">
+           <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <button data-target="page-cover" class="page-link p-2 text-gray-500 hover:text-primary-blue" title="Volver al inicio"><i class="fas fa-home"></i></button>
+                    <h1 class="text-xl font-bold" style="font-family: 'Montserrat', sans-serif;">CONCLUSIONES Y CIERRE TÉCNICO</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="presentation-mode-btn p-2 text-gray-500 hover:text-primary-solar" title="Modo Presentación"><i class="play-icon fas fa-play"></i><i class="stop-icon fas fa-stop hidden"></i></button>
+                    <button class="fullscreen-btn p-2 text-gray-500 hover:text-primary-solar" title="Pantalla Completa"><i class="fas fa-expand"></i></button>
+                </div>
+            </nav>
+            <div class="presentation-nav-container hidden bg-white border-t border-b border-gray-200">
+                <div class="presentation-progress-bar w-0 h-1 bg-primary-solar transition-all duration-300"></div>
+                <div class="presentation-nav-tree container mx-auto px-6 py-2 flex justify-center items-center text-xs text-gray-600 gap-x-4 overflow-x-auto whitespace-nowrap"></div>
+            </div>
+        </header>
+         <main>
+            <!-- SLIDE 1 (CONCLUSIÓN): MENSAJE CLAVE -->
+            <section data-title="Mensaje Clave" class="slide">
+                <div class="container mx-auto px-6">
+                    <div class="text-center max-w-4xl mx-auto">
+                        <i class="fas fa-lightbulb text-6xl text-primary-solar mb-6"></i>
+                        <h2 class="section-title">Mensajes Clave y Cierre</h2>
+                        <p class="section-subtitle mt-6">La performance de una planta FV depende en **~80% del buen dimensionamiento** y comisionamiento inicial, y el resto de un O&M disciplinado.</p>
+                        <p class="section-subtitle mt-4">El talón de Aquiles de la FV (intermitencia) se mitiga con BESS y control Volt/Var. Su fortaleza: un **OPEX bajo y modularidad**.</p>
+                    </div>
+                    <div class="card grid md:grid-cols-2 gap-8 mt-12 text-left">
+                        <div>
+                            <h3 class="font-bold text-xl mb-4 text-primary-blue"><i class="fas fa-tasks mr-2"></i>Takeaways de Gestión</h3>
+                            <ul class="list-disc list-inside space-y-2 text-light-text">
+                                <li><strong>Operar por Condición:</strong> Usar PR, IR y Curvas I-V para decidir el O&M. Evita costos innecesarios.</li>
+                                <li><strong>Atacar los Clásicos:</strong> Conectores incompatibles, par de apriete insuficiente y mallas de tierra pobres son las fallas más comunes.</li>
+                                <li><strong>Stock Inteligente:</strong> Un plan de repuestos críticos (fusibles, fans) y un MTTR bajo rinden más que un depósito lleno.</li>
+                            </ul>
+                        </div>
+                        <div class_alias="bg-background-light p-6 rounded-lg border">
+                             <h3 class="font-bold text-xl mb-4 text-primary-blue"><i class="fas fa-exclamation-triangle mr-2"></i>Puntos Críticos de Diseño</h3>
+                             <ul class="list-disc list-inside space-y-2 text-light-text">
+                                <li>Diseñar para el peor caso térmico: **Voc@Tmin < Vmax** y **Vmp@Tmax > Vmin MPPT**.</li>
+                                <li>Un comisionamiento (IEC 62446-1) con línea base (IR, I-V) es el **"seguro de rendimiento"** y la base de la garantía.</li>
+                                 <li>Para firmeza, agregar BESS (baterías) y usar el inversor para dar servicios de red (Volt/Var).</li>
+                             </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SLIDE 2 (CONCLUSIÓN): CHECKLIST DISEÑO -->
+            <section data-title="Checklist: Diseño" class="slide">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Cierre Técnico: Checklist de Diseño</h2><p class="section-subtitle mt-4">Puntos de control "innegociables" del dimensionamiento y la puesta en marcha.</p></div>
+                    <div class="card max-w-5xl mx-auto grid md:grid-cols-2 gap-x-12">
+                        <div>
+                            <h3 class="font-bold text-2xl text-primary-blue mb-6">Dimensionamiento (Punto 2)</h3>
+                            <ul class="conclusion-checklist">
+                                <li><i class="fas fa-thermometer-half icon-dimensionamiento"></i><strong>String Sizing:</strong> Verificar Voc@Tmin < Vmax_inv y Vmp@Tmax > Vmin_MPPT.</li>
+                                <li><i class="fas fa-bolt icon-dimensionamiento"></i><strong>Protecciones:</strong> Cálculo con Isc x 1.25 y selectividad DC/AC.</li>
+                                <li><i class="fas fa-layer-group icon-dimensionamiento"></i><strong>Ratio DC/AC:</strong> 1.1–1.3 (overbuild) para optimizar uso del inversor.</li>
+                                <li><i class="fas fa-ruler-vertical icon-dimensionamiento"></i><strong>Caída de Tensión:</strong> Mantener ≤ 2–3% por tramo.</li>
+                                <li><i class="fas fa-cloud-sun icon-dimensionamiento"></i><strong>Sombreado:</strong> Evitar o segregar strings (con optimización si hay ROI).</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-2xl text-primary-blue mb-6">Comisionamiento (Punto 3)</h3>
+                            <ul class="conclusion-checklist">
+                                <li><i class="fas fa-check-double icon-mantenimiento"></i><strong>Ensayos Base (IEC 62446):</strong> Continuidad PE, Polaridad, Voc/Isc por string.</li>
+                                <li><i class="fas fa-shield-alt icon-mantenimiento"></i><strong>Test de Aislamiento (Riso):</strong> Mínimo ≥ 1 MΩ (Objetivo > 5 MΩ).</li>
+                                <li><i class="fas fa-chart-area icon-mantenimiento"></i><strong>Línea Base Avanzada:</strong> Curvas I-V y Termografía IR de referencia.</li>
+                                <li><i class="fas fa-power-off icon-mantenimiento"></i><strong>Pruebas Funcionales:</strong> Anti-isla y operación de protecciones.</li>
+                                <li><i class="fas fa-file-alt icon-mantenimiento"></i><strong>Documentación:</strong> Entregar As-Built, fichas de ensayo y plan de O&M.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SLIDE 3 (CONCLUSIÓN): CHECKLIST O&M -->
+            <section data-title="Checklist: O&M" class="slide">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Cierre Técnico: Checklist de O&M</h2><p class="section-subtitle mt-4">Resumen de las estrategias de mantenimiento programado, predictivo y reactivo.</p></div>
+                    <div class="card max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
+                        <!-- Preventivo -->
+                        <div>
+                            <h3 class="font-bold text-2xl text-accent-green mb-6"><i class="fas fa-shield-alt mr-2"></i>Preventivo (Punto 4)</h3>
+                            <ul class="conclusion-checklist text-sm">
+                                <li><i class="fas fa-brush icon-mantenimiento"></i><strong>Limpieza:</strong> Por condición (Soiling ratio > 2-3%), no por calendario.</li>
+                                <li><i class="fas fa-plug-circle-check icon-mantenimiento"></i><strong>Conectores:</strong> Re-apriete con torquímetro. No mezclar familias MC4.</li>
+                                <li><i class="fas fa-fan icon-mantenimiento"></i><strong>Inversores:</strong> Limpieza de filtros/ventiladores, registro de eventos, firmware.</li>
+                                <li><i class="fas fa-compass icon-mantenimiento"></i><strong>Trackers:</strong> Alineación, lubricación y prueba de *stow* (defensa).</li>
+                            </ul>
+                        </div>
+                        <!-- Predictivo -->
+                        <div>
+                            <h3 class="font-bold text-2xl text-primary-solar mb-6"><i class="fas fa-chart-line mr-2"></i>Predictivo (Punto 5)</h3>
+                            <ul class="conclusion-checklist text-sm">
+                                <li><i class="fas fa-thermometer-half icon-predictivo"></i><strong>Termografía IR:</strong> Semestral. Criterio clave: ΔT ≥ 10 K = Crítico.</li>
+                                <li><i class="fas fa-chart-area icon-predictivo"></i><strong>Curvas I-V:</strong> Anual (por muestra). Para trending de degradación (PID/LID).</li>
+                                <li><i class="fas fa-satellite-dish icon-predictivo"></i><strong>SCADA (KPIs):</strong> Análisis de PR (objetivo 0.75-0.85), *string outliers* (z-score).</li>
+                                <li><i class="fas fa-lightbulb icon-predictivo"></i><strong>Electroluminiscencia (EL):</strong> Muestreal (bienal) para microfisuras.</li>
+                            </ul>
+                        </div>
+                        <!-- Correctivo -->
+                        <div>
+                            <h3 class="font-bold text-2xl text-red-500 mb-6"><i class="fas fa-wrench mr-2"></i>Correctivo (Punto 6)</h3>
+                            <ul class="conclusion-checklist text-sm">
+                                <li><i class="fas fa-clock icon-correctivo"></i><strong>MTTR:</strong> Objetivo < 6h en inversores.</li>
+                                <li><i class="fas fa-box-open icon-correctivo"></i><strong>Stock Mínimo:</strong> Fusibles, SPD, fans, 0.5% de módulos.</li>
+                                <li><i class="fas fa-fire-extinguisher icon-correctivo"></i><strong>Protocolos:</strong> Procedimiento claro para hot-spots y conectores recalentados.</li>
+                                <li><i class="fas fa-file-invoice icon-correctivo"></i><strong>Garantías:</strong> Basar reclamos en datos (I-V, EL, PR), no en suposiciones.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SLIDE 4 (CONCLUSIÓN): CHECKLIST GESTIÓN -->
+            <section data-title="Checklist: Gestión" class="slide">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12"><h2 class="section-title">Cierre Técnico: Gestión y Seguridad</h2><p class="section-subtitle mt-4">Métricas clave de gestión (KPIs), seguridad y puntos de control específicos del contexto argentino.</p></div>
+                    <div class="card max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
+                        <!-- Seguridad -->
+                        <div>
+                            <h3 class="font-bold text-2xl text-red-500 mb-6"><i class="fas fa-hard-hat mr-2"></i>Seguridad (Punto 7)</h3>
+                            <ul class="conclusion-checklist text-sm">
+                                <li><i class="fas fa-lock icon-correctivo"></i><strong>LOTO:</strong> Protocolo de bloqueo en DC y AC.</li>
+                                <li><i class="fas fa-exclamation-triangle icon-correctivo"></i><strong>Arco DC:</strong> ¡Peligro! Operar a baja irradiancia (amanecer/atardecer) o cubrir strings.</li>
+                                <li><i class="fas fa-user-shield icon-correctivo"></i><strong>EPP:</strong> Ropa y EPP clase eléctrica (Arc Flash), líneas de vida (altura).</li>
+                            </ul>
+                        </div>
+                        <!-- Métricas -->
+                        <div>
+                            <h3 class="font-bold text-2xl text-primary-blue mb-6"><i class="fas fa-tachometer-alt mr-2"></i>Métricas de Cierre (Punto 8)</h3>
+                            <ul class="conclusion-checklist text-sm">
+                                <li><i class="fas fa-check-circle icon-dimensionamiento"></i><strong>Disponibilidad:</strong> Objetivo ≥ 99%.</li>
+                                <li><i class="fas fa-chart-bar icon-dimensionamiento"></i><strong>PR:</strong> Mantener en banda histórica (±2 pp).</li>
+                                <li><i class="fas fa-shield-alt icon-dimensionamiento"></i><strong>Riso:</strong> Mantener > 5 MΩ; Alerta si cae > 20% interanual.</li>
+                                <li><i class="fas fa-percentage icon-dimensionamiento"></i><strong>Degradación:</strong> < 0.8%/año (según garantía).</li>
+                            </ul>
+                        </div>
+                        <!-- Argentina -->
+                        <div>
+                            <h3 class="font-bold text-2xl text-primary-blue mb-6"><i class="fas fa-map-marked-alt mr-2"></i>Contexto Argentina (Punto 9)</h3>
+                            <ul class="conclusion-checklist text-sm">
+                                <li><i class="fas fa-file-alt icon-dimensionamiento"></i><strong>Marco:</strong> Ley 27.424 (GD), adhesión provincial, medidor bidireccional.</li>
+                                <li><i class="fas fa-network-wired icon-dimensionamiento"></i><strong>Red:</strong> Homologación de inversor (anti-isla) y coordinación de protecciones.</li>
+                                <li><i class="fas fa-dollar-sign icon-dimensionamiento"></i><strong>OPEX:</strong> Dominado por limpieza y recambio de inversores (medio ciclo).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+         </main>
+         <div class="presentation-arrows hidden">
+             <button class="prev-slide-btn fixed left-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-white/70 backdrop-blur-sm border rounded-full shadow-lg hover:bg-white disabled:opacity-30"><i class="fas fa-chevron-left text-xl"></i></button>
+             <button class="next-slide-btn fixed right-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-white/70 backdrop-blur-sm border rounded-full shadow-lg hover:bg-white"><i class="fas fa-chevron-right text-xl"></i></button>
+        </div>
+    </div>
+
+    <!-- MODAL DE IMAGEN -->
+    <div id="image-modal-backdrop" class="fixed inset-0 bg-black/70 z-[60] hidden opacity-0 flex items-center justify-center p-4">
+        <div id="image-modal-content" class="bg-white rounded-lg p-2 max-w-4xl max-h-[90vh] w-auto relative scale-95 opacity-0">
+            <button id="image-modal-close" class="absolute -top-4 -right-4 bg-primary-blue text-white rounded-full h-10 w-10 text-2xl flex items-center justify-center shadow-lg">&times;</button>
+            <img id="modal-image" src="" class="max-w-full max-h-[85vh] object-contain rounded">
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIGURACIÓN GLOBAL DEL EQUIPO ---
+            const teamMembers = [
+                { name: 'Jesús Castellanos' },
+                { name: 'Nicolás Arguello' },
+                { name: 'Paloma Mariño' },
+                { name: 'Jesús Rozzano' },
+            ];
+            
+            function populateTeamCaratula(containerSelector) {
+                const container = document.querySelector(containerSelector);
+                if(container) {
+                    container.innerHTML = teamMembers.map(member => `<span class="text-lg font-medium text-light-text">${member.name}</span>`).join('<span class="mx-3 text-gray-400">•</span>');
+                }
+            }
+
+            populateTeamCaratula('#equipo-caratula div');
+
+            // --- NAVEGACIÓN DE PÁGINAS ---
+            const pages = document.querySelectorAll('.page');
+            document.querySelectorAll('.page-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = e.currentTarget.dataset.target;
+                    pages.forEach(page => page.classList.toggle('active', page.id === targetId));
+                    window.scrollTo(0, 0);
+                });
+            });
+
+            // --- PESTAÑAS INTERACTIVAS (GENÉRICO PARA SLIDES 2 y 9) ---
+            function setupComponentTabs() {
+                const presentationPages = document.querySelectorAll('.presentation-page');
+                presentationPages.forEach(page => {
+                    // Busca contenedores de pestañas que NO sean el de comparativa
+                    const tabContainers = page.querySelectorAll('.card:not(:has(.comparison-btn))');
+                    tabContainers.forEach(container => {
+                        const tabButtons = container.querySelectorAll('.tab-btn');
+                        const tabContents = container.querySelectorAll('.tab-content');
+                        
+                        if(tabButtons.length === 0 || tabContents.length === 0) return;
+
+                        tabButtons.forEach(button => {
+                            button.addEventListener('click', (e) => {
+                                e.stopPropagation(); // Prevenir que avance el slide
+                                const targetId = button.dataset.target;
+
+                                tabButtons.forEach(btn => btn.classList.remove('active'));
+                                tabContents.forEach(content => content.classList.remove('active'));
+
+                                button.classList.add('active');
+                                const targetContent = container.querySelector(`#${targetId}`);
+                                if (targetContent) {
+                                    targetContent.classList.add('active');
+                                }
+                            });
+                        });
+                    });
+                });
+            }
+            setupComponentTabs(); // Llamar a la función genérica
+
+            // --- PESTAÑAS DE COMPARATIVA (SLIDE 12) ---
+            function setupComparisonTabs() {
+                const slide = document.querySelector('[data-title="Comparativa"]');
+                if (!slide) return;
+
+                const tabButtons = slide.querySelectorAll('.comparison-btn');
+                const tabContents = slide.querySelectorAll('.comparison-content');
+
+                if(tabButtons.length === 0 || tabContents.length === 0) return;
+
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevenir que avance el slide
+                        const targetId = button.dataset.compTarget;
+
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        tabContents.forEach(content => content.classList.remove('active'));
+
+                        button.classList.add('active');
+                        const targetContent = slide.querySelector(`#${targetId}`);
+                        if (targetContent) {
+                            targetContent.classList.add('active');
+                        }
+                    });
+                });
+            }
+            setupComparisonTabs(); // Llamar a la función específica
+
+            // --- MODO PRESENTACIÓN ---
+            function setupPresentationPage(pageElement) {
+                const presentationModeBtn = pageElement.querySelector('.presentation-mode-btn');
+                if (!presentationModeBtn) return;
+
+                const playIcon = presentationModeBtn.querySelector('.play-icon');
+                const stopIcon = presentationModeBtn.querySelector('.stop-icon');
+                const fullscreenBtn = pageElement.querySelector('.fullscreen-btn');
+                const presentationNavContainer = pageElement.querySelector('.presentation-nav-container');
+                const presentationArrows = pageElement.querySelector('.presentation-arrows');
+                const prevSlideBtn = pageElement.querySelector('.prev-slide-btn');
+                const nextSlideBtn = pageElement.querySelector('.next-slide-btn');
+                const slides = Array.from(pageElement.querySelectorAll('main > .slide'));
+                
+                let currentSlideIndex = 0;
+                let isPresentationMode = false;
+
+                function setupNavTree() {
+                    const navTree = pageElement.querySelector('.presentation-nav-tree');
+                    if (!navTree) return;
+                    navTree.innerHTML = slides.map((slide, index) => `<a href="#" class="nav-item px-3 py-2" data-index="${index}">${slide.dataset.title}</a>`).join('');
+                    navTree.querySelectorAll('.nav-item').forEach(item => item.addEventListener('click', e => { 
+                        e.stopPropagation(); 
+                        e.preventDefault(); 
+                        goToSlide(parseInt(e.currentTarget.dataset.index)); 
+                    }));
+                }
+
+                function goToSlide(index) {
+                    if (index < 0 || index >= slides.length) return;
+                    currentSlideIndex = index;
+                    slides.forEach((slide, i) => slide.classList.toggle('active-slide', i === index));
+                    updatePresentationUI();
+                }
+
+                function updatePresentationUI() {
+                    const progress = ((currentSlideIndex + 1) / slides.length) * 100;
+                    const progressBar = pageElement.querySelector('.presentation-progress-bar');
+                    if (progressBar) progressBar.style.width = `${progress}%`;
+                    
+                    pageElement.querySelectorAll('.presentation-nav-tree .nav-item').forEach((item, i) => item.classList.toggle('active', i === currentSlideIndex));
+                    if (prevSlideBtn) prevSlideBtn.disabled = currentSlideIndex === 0;
+                    if (nextSlideBtn) nextSlideBtn.disabled = currentSlideIndex === slides.length - 1;
+                }
+
+                function togglePresentationMode() {
+                    isPresentationMode = !isPresentationMode;
+                    document.body.classList.toggle('presentation-mode', isPresentationMode);
+                    playIcon.classList.toggle('hidden', isPresentationMode);
+                    stopIcon.classList.toggle('hidden', !isPresentationMode);
+                    presentationNavContainer.classList.toggle('hidden', !isPresentationMode);
+                    if (presentationArrows) presentationArrows.classList.toggle('hidden', !isPresentationMode);
+                    if (isPresentationMode) {
+                        goToSlide(0);
+                        if(document.documentElement.requestFullscreen) {
+                            document.documentElement.requestFullscreen();
+                        }
+                    } else {
+                        slides.forEach(s => s.classList.remove('active-slide'));
+                         if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        }
+                    }
+                }
+
+                presentationModeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    togglePresentationMode();
+                });
+
+                if (prevSlideBtn) prevSlideBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    goToSlide(currentSlideIndex - 1)
+                });
+                if (nextSlideBtn) nextSlideBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    goToSlide(currentSlideIndex + 1)
+                });
+                
+                slides.forEach(slide => {
+                    slide.addEventListener('click', (e) => {
+                        // Avanza slide al hacer clic, pero no si el clic es en un botón, link, pestaña, etc.
+                        if (isPresentationMode && !e.target.closest('button, a, input, label, .clickable-image, .tab-btn, .comparison-btn')) {
+                             if (nextSlideBtn && !nextSlideBtn.disabled) nextSlideBtn.click();
+                        }
+                    });
+                });
+
+                fullscreenBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else {
+                        document.documentElement.requestFullscreen();
+                    }
+                });
+                
+                document.addEventListener('keydown', (e) => {
+                    if (isPresentationMode && pageElement.classList.contains('active')) {
+                        if (e.key === 'ArrowRight' && nextSlideBtn && !nextSlideBtn.disabled) nextSlideBtn.click();
+                        if (e.key === 'ArrowLeft' && prevSlideBtn && !prevSlideBtn.disabled) prevSlideBtn.click();
+                        if (e.key === 'Escape' || e.key === 'f') {
+                            if (document.fullscreenElement) document.exitFullscreen();
+                            if(isPresentationMode) togglePresentationMode();
+                        }
+                    }
+                });
+                
+                setupNavTree();
+            }
+            
+            document.querySelectorAll('.presentation-page').forEach(setupPresentationPage);
+
+             // --- MODAL DE IMAGEN ---
+            const modalBackdrop = document.getElementById('image-modal-backdrop');
+            const modalContent = document.getElementById('image-modal-content');
+            const modalImage = document.getElementById('modal-image');
+            document.querySelectorAll('.clickable-image').forEach(img => {
+                img.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Previene que el clic avance la diapositiva
+                    modalImage.src = img.src;
+                    modalBackdrop.classList.remove('hidden');
+                    setTimeout(() => { modalBackdrop.classList.remove('opacity-0'); modalContent.classList.remove('opacity-0', 'scale-95'); }, 10);
+                });
+            });
+            const closeModal = () => {
+                modalContent.classList.add('opacity-0', 'scale-95');
+                modalBackdrop.classList.add('opacity-0');
+                setTimeout(() => modalBackdrop.classList.add('hidden'), 300);
+            };
+            document.getElementById('image-modal-close').addEventListener('click', closeModal);
+            modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); }); // Error corregido: modalBackmrop -> modalBackdrop
+            
+        });
+    </script>
+</body>
+</html>
+
