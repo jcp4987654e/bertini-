@@ -375,8 +375,8 @@
                                 <li><strong class="text-dark-text">Microinversores:</strong> Un pequeño inversor por cada panel. Optimiza la producción individualmente, ideal para techos con sombras complejas.</li>
                                 <li><strong class="text-dark-text">Inversores Centrales:</strong> Equipos de gran potencia (MW) para plantas utility-scale, consolidando múltiples combinadoras.</li>
                                 <li><strong class="text-dark-text">Híbridos:</strong> Gestionan paneles, red y bancos de baterías (almacenamiento) simultáneamente.</li>
-                            </ul>
-                        </div>
+                                    </ul>
+                                </div>
                         
                         <div id="panel-estructuras" class="tab-panel">
                             <h3 class="font-bold text-2xl mb-3 text-primary-blue">Estructuras y Seguidores (Trackers)</h3>
@@ -394,14 +394,14 @@
                             <p class="text-light-text mb-4">Esenciales para proteger equipos y personas contra sobrecorrientes, sobretensiones y fallas a tierra.</p>
                             <ul class="styled-list">
                                 <li><strong class="text-dark-text">Lado DC (Corriente Continua):</strong>
-                                    <ul>
+                                    <ul class="list-disc list-inside pl-4 text-sm text-light-text mt-1">
                                         <li>Fusibles gPV (en Cajas Combinadoras) para proteger strings en paralelo.</li>
                                         <li>Seccionadores bajo carga (IEC 60947-3) para aislar tramos.</li>
                                         <li>SPD (Protectores de Sobretensión) Tipo 2 para descargas atmosféricas inducidas.</li>
                                     </ul>
                                 </li>
                                 <li><strong class="text-dark-text">Lado AC (Corriente Alterna):</strong>
-                                    <ul>
+                                    <ul class="list-disc list-inside pl-4 text-sm text-light-text mt-1">
                                         <li>Interruptores Termomagnéticos (selectividad).</li>
                                         <li>Interruptores Diferenciales (RCD) si aplica.</li>
                                         <li>SPD Tipo 2 en tablero principal.</li>
@@ -572,7 +572,7 @@
                             <div>
                                 <h4 class="font-semibold text-dark-text text-lg">Falla de Tracker</h4>
                                 <p class="text-sm text-light-text"><strong>Causa:</strong> Falla de motor/actuador, tarjeta de control o sensor de posición.
-                                <br><strong>Acción:</strong> Reemplazo del componente y realineado del eje.</p>
+                                <br>Reactiva (no programada) para solucionar fallas y restaurar la operación lo más rápido posible (minimizar MTTR).</p>
                             </div>
                         </div>
                     </div>
@@ -852,7 +852,7 @@
                         </div>
                         
                         <!-- Columna Variable: Tabs -->
-                        <div class="comparison-tabs">
+                        <div class="comparison-tabs tab-panels-container"> <!-- Añadido tab-panels-container -->
                             <!-- Botones de Tabs -->
                             <div class="grid grid-cols-3 gap-2 mb-2">
                                 <button class="tab-button active" data-target="panel-eolica"><i class="fas fa-wind mr-2"></i>Eólica Onshore</button>
@@ -997,15 +997,57 @@
                     e.preventDefault();
                     e.stopPropagation();
                     const targetId = e.currentTarget.dataset.target;
+                    
+                    // Cambia la página activa
                     pages.forEach(page => page.classList.toggle('active', page.id === targetId));
                     window.scrollTo(0, 0);
+                    
+                    // Si el destino es la página solar, activa el modo presentación automáticamente
+                    if (targetId === 'page-solar') {
+                        const solarPage = document.getElementById('page-solar');
+                        if (solarPage) {
+                            const presentationModeBtn = solarPage.querySelector('.presentation-mode-btn');
+                            const playIcon = presentationModeBtn.querySelector('.play-icon');
+                            const stopIcon = presentationModeBtn.querySelector('.stop-icon');
+                            const presentationNavContainer = solarPage.querySelector('.presentation-nav-container');
+                            const presentationArrows = solarPage.querySelector('.presentation-arrows');
+                            const slides = Array.from(solarPage.querySelectorAll('main > .slide'));
+
+                            // Activar modo presentación manualmente sin fullscreen
+                            document.body.classList.add('presentation-mode');
+                            playIcon.classList.add('hidden');
+                            stopIcon.classList.remove('hidden');
+                            if (presentationNavContainer) presentationNavContainer.classList.remove('hidden');
+                            if (presentationArrows) presentationArrows.classList.remove('hidden');
+                            
+                            // Ir a la slide 0 y actualizar UI (simulando goToSlide y updateUI)
+                            slides.forEach((slide, i) => slide.classList.toggle('active-slide', i === 0));
+                            const progress = (1 / slides.length) * 100;
+                            const progressBar = solarPage.querySelector('.presentation-progress-bar');
+                            if (progressBar) progressBar.style.width = `${progress}%`;
+                            solarPage.querySelectorAll('.presentation-nav-tree .nav-item').forEach((item, i) => {
+                                item.classList.toggle('active', i === 0);
+                            });
+                            const prevSlideBtn = solarPage.querySelector('.prev-slide-btn');
+                            const nextSlideBtn = solarPage.querySelector('.next-slide-btn');
+                            if (prevSlideBtn) prevSlideBtn.disabled = true;
+                            if (nextSlideBtn) nextSlideBtn.disabled = (slides.length <= 1);
+
+                            // Marcar que estamos en modo presentación para el setup de la página
+                            solarPage.dataset.presentationModeActive = "true";
+                        }
+                    }
                 });
             });
 
             // --- SISTEMA DE TABS INTERACTIVAS (Componentes, KPIs, Comparativa) ---
             document.querySelectorAll('.tab-container, .comparison-tabs').forEach(container => {
                 const buttons = container.querySelectorAll('.tab-button');
-                const panels = container.parentElement.querySelectorAll('.tab-panel'); // Busca paneles afuera si es comparison-tabs
+                // Ajuste para la estructura de 'comparison-tabs'
+                let panelContainer = container.parentElement.querySelector('.tab-panels-container');
+                if (!panelContainer) {
+                    panelContainer = container.parentElement; // Fallback para 'tab-container'
+                }
 
                 buttons.forEach(button => {
                     button.addEventListener('click', (e) => {
@@ -1015,12 +1057,6 @@
                         buttons.forEach(btn => btn.classList.remove('active'));
                         e.currentTarget.classList.add('active');
                         
-                        // Determina dónde buscar los paneles
-                        let panelContainer = container.parentElement.querySelector('.tab-panels-container'); // Para comparativa
-                        if (!panelContainer) {
-                             panelContainer = container.parentElement; // Para componentes y KPIs
-                        }
-
                         panelContainer.querySelectorAll('.tab-panel').forEach(panel => {
                             panel.classList.toggle('active', panel.id === targetId);
                         });
@@ -1044,6 +1080,12 @@
                 
                 let currentSlideIndex = 0;
                 let isPresentationMode = false;
+
+                // Chequea si la página ya fue forzada a modo presentación
+                if (pageElement.dataset.presentationModeActive === "true") {
+                    isPresentationMode = true;
+                    currentSlideIndex = 0;
+                }
 
                 // Crea los links en la barra de navegación superior
                 function setupNavTree() {
@@ -1085,6 +1127,7 @@
 
                 function togglePresentationMode() {
                     isPresentationMode = !isPresentationMode;
+                    pageElement.dataset.presentationModeActive = isPresentationMode.toString(); // Actualiza el estado
                     document.body.classList.toggle('presentation-mode', isPresentationMode);
                     playIcon.classList.toggle('hidden', isPresentationMode);
                     stopIcon.classList.toggle('hidden', !isPresentationMode);
@@ -1094,15 +1137,23 @@
                     
                     if (isPresentationMode) {
                         goToSlide(0); // Inicia en la primera slide
+                        
+                        // NO SOLICITAR FULLSCREEN - Causa error de permisos en el iframe
+                        /*
                         if (document.documentElement.requestFullscreen) {
                             document.documentElement.requestFullscreen();
                         }
+                        */
                     } else {
                         slides.forEach(s => s.classList.remove('active-slide')); // Saca modo activo
                         slides[0].classList.add('active-slide'); // Deja la primera visible
+                        
+                        // NO SALIR DE FULLSCREEN
+                        /*
                         if (document.exitFullscreen) {
                             document.exitFullscreen();
                         }
+                        */
                     }
                 }
 
@@ -1134,13 +1185,15 @@
                     if (document.fullscreenElement) {
                         document.exitFullscreen();
                     } else {
-                        document.documentElement.requestFullscreen();
+                        // Esta llamada SÍ funciona porque es un clic directo del usuario en el botón de fullscreen
+                        document.documentElement.requestFullscreen(); 
                     }
                 });
                 
                 // Controles de teclado
                 document.addEventListener('keydown', (e) => {
                     // Solo si estamos en modo presentación Y esta es la página activa
+                    isPresentationMode = (pageElement.dataset.presentationModeActive === "true"); // Re-check state
                     if (isPresentationMode && pageElement.classList.contains('active')) {
                         if (e.key === 'ArrowRight' || e.key === ' ') {
                             e.preventDefault();
@@ -1152,14 +1205,22 @@
                         }
                         if (e.key === 'Escape' || e.key === 'f') {
                             e.preventDefault();
-                            if(isPresentationMode) togglePresentationMode();
+                            if (document.fullscreenElement) {
+                                document.exitFullscreen(); // El usuario puede salir de fullscreen con ESC
+                            }
+                            if(isPresentationMode) {
+                                togglePresentationMode(); // También salimos del modo presentación
+                            }
                         }
                     }
                 });
                 
                 setupNavTree();
                 if (slides.length > 0) {
-                    slides[0].classList.add('active-slide'); // Asegura que la primera slide sea visible al cargar
+                    // Si ya estaba en modo presentación, no toques la slide activa (ya es la 0)
+                    if (!isPresentationMode) {
+                        slides[0].classList.add('active-slide'); // Asegura que la primera slide sea visible al cargar
+                    }
                 }
             }
             
