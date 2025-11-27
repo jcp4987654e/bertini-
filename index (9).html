@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentación Técnica: Generación Solar FV</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        solar: '#F59E0B',     /* Amber 500 */
+                        energy: '#2563EB',    /* Blue 600 */
+                        dark: '#0F172A',      /* Slate 900 */
+                        surface: '#FFFFFF',   /* White */
+                        danger: '#EF4444',    /* Red 500 */
+                        success: '#10B981',   /* Emerald 500 */
+                        uv: '#8B5CF6',        /* Violet 500 (Para UV) */
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['Space Grotesk', 'monospace'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F8FAFC; /* Slate 50 */
+            color: #334155; /* Slate 700 */
+            overflow: hidden;
+        }
+
+        /* --- GLASSMORPHISM PRO --- */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- ANIMACIONES --- */
+        .slide {
+            display: none;
+            opacity: 0;
+            transform: scale(0.96);
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            height: 100vh;
+            width: 100vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            padding-bottom: 100px;
+        }
+        
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+            z-index: 10;
+        }
+
+        .animate-in {
+            animation: slideInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+
+        @keyframes slideInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- SIMULADOR SOLAR --- */
+        .sun-track {
+            width: 300px;
+            height: 150px;
+            border-top-left-radius: 150px;
+            border-top-right-radius: 150px;
+            border: 2px dashed #CBD5E1;
+            position: relative;
+            margin: 0 auto;
+        }
+        .sun {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #F59E0B 0%, #FBBF24 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.6);
+            position: absolute;
+            top: 100%; 
+            left: 0; 
+            transform: translate(-50%, -50%);
+            transition: all 0.05s linear;
+        }
+        .solar-panel-visual {
+            width: 100px;
+            height: 6px;
+            background: linear-gradient(90deg, #1e3a8a, #2563EB);
+            border: 1px solid #60a5fa;
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            margin-left: -50px;
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* --- DASHBOARD --- */
+        .log-line {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.75rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 4px 0;
+        }
+
+        .clickable-image { cursor: zoom-in; transition: transform 0.3s; }
+        .clickable-image:hover { transform: scale(1.03); }
+        
+        /* Tabs custom */
+        .tab-btn.active {
+            background: linear-gradient(90deg, #EFF6FF 0%, #FFFFFF 100%);
+            border-left: 4px solid #2563EB;
+            color: #1E40AF;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVEGACIÓN -->
+    <nav class="fixed top-6 left-6 z-50 flex gap-4">
+        <div class="bg-white/90 backdrop-blur px-4 py-2 rounded-full text-slate-600 font-mono text-sm border border-slate-200 shadow-sm flex items-center gap-2">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <span id="slide-indicator">01 / 13</span>
+        </div>
+    </nav>
+    <nav class="fixed bottom-8 right-8 z-50 flex gap-3">
+        <button onclick="prevSlide()" class="w-14 h-14 rounded-full bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 shadow-xl transition flex items-center justify-center disabled:opacity-50 group">
+            <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+        </button>
+        <button onclick="nextSlide()" class="w-14 h-14 rounded-full bg-solar hover:bg-amber-400 text-white font-bold shadow-xl shadow-amber-500/30 transition flex items-center justify-center disabled:opacity-50 group">
+            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+        </button>
+    </nav>
+
+    <!-- SLIDE 1: PORTADA -->
+    <section class="slide active flex-col justify-center items-center text-center p-6 relative bg-slate-50">
+        <!-- Botón Pantalla Completa en Portada -->
+        <div class="absolute top-6 right-6 z-50">
+            <button class="fullscreen-btn w-12 h-12 rounded-full bg-white/80 hover:bg-white text-slate-600 border border-slate-200 shadow-md backdrop-blur-sm transition flex items-center justify-center" title="Pantalla Completa">
+                <i class="fas fa-expand"></i>
+            </button>
+        </div>
+
+        <div class="absolute inset-0 z-0 overflow-hidden">
+            <div class="absolute -top-20 -right-20 w-96 h-96 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow"></div>
+            <div class="absolute -bottom-20 -left-20 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow" style="animation-delay: 1s"></div>
+        </div>
+        
+        <div class="relative z-10 animate-in">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 font-mono text-xs mb-8 shadow-sm">
+                <i class="fas fa-bolt text-solar"></i> INGENIERÍA ELÉCTRICA
+            </div>
+            <h1 class="text-6xl md:text-8xl font-black mb-6 tracking-tight text-slate-800 leading-none">
+                SOLAR <br> <span class="text-transparent bg-clip-text bg-gradient-to-r from-solar to-orange-600">FOTOVOLTAICA</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-slate-500 font-light max-w-2xl mx-auto leading-relaxed mb-10">
+                Análisis Técnico Integral: Dimensionamiento, Puesta en Marcha IEC y O&M Predictivo.
+            </p>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-400 font-mono border-t border-slate-200/50 pt-8 max-w-3xl mx-auto">
+                <span>J. Castellanos</span>
+                <span>N. Arguello</span>
+                <span>P. Mariño</span>
+                <span>J. Rozzano</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 2: CICLO DE VIDA -->
+    <section class="slide flex-col justify-center items-center p-6">
+        <div class="max-w-6xl w-full text-center mb-12">
+            <h2 class="text-4xl font-bold text-slate-800">El Ciclo de Vida <span class="text-solar">Crítico</span></h2>
+            <p class="text-slate-500 mt-2">Las 3 etapas que definen la rentabilidad de un proyecto.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
+            <div class="glass-card p-8 border-t-4 border-t-energy animate-in delay-100 group">
+                <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-3xl text-energy mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-drafting-compass"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-3 text-slate-800">Dimensionamiento</h3>
+                <p class="text-slate-500 leading-relaxed">Cálculo de strings. Verificar <strong class="text-energy">Voc @ Tmin</strong> para evitar daños irreversibles al inversor.</p>
+            </div>
+
+            <div class="glass-card p-8 border-t-4 border-t-solar animate-in delay-200 group">
+                <div class="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center text-3xl text-solar mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-vial"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-3 text-slate-800">Comisionamiento</h3>
+                <p class="text-slate-500 leading-relaxed">Ensayos <strong class="text-solar">IEC 62446-1</strong> (Riso, Polaridad, I-V). Es la "Partida de Nacimiento" de la planta.</p>
+            </div>
+
+            <div class="glass-card p-8 border-t-4 border-t-success animate-in delay-300 group">
+                <div class="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-3xl text-success mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-3 text-slate-800">Ensayos NO Destructivos</h3>
+                <p class="text-slate-500 leading-relaxed">Operar por condición. Uso de <strong class="text-success">Drones, EL y UV</strong> para detectar fallas antes que ocurran.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 3: COMPONENTES -->
+    <section class="slide flex-col justify-center items-center p-6">
+        <h2 class="text-3xl font-bold text-slate-800 mb-8">Anatomía del Sistema</h2>
+        
+        <div class="glass-card w-full max-w-6xl h-[600px] flex flex-col md:flex-row overflow-hidden shadow-2xl animate-in">
+            <!-- Sidebar -->
+            <div class="w-full md:w-72 bg-slate-50/80 border-r border-slate-200 p-6 flex flex-col gap-3 tab-group" data-group="components">
+                <button class="tab-btn active p-4 text-left rounded-xl transition flex items-center gap-4 text-slate-600 font-bold" data-target="comp-modulos">
+                    <i class="fas fa-solar-panel text-xl w-6 text-center"></i> Módulos
+                </button>
+                <button class="tab-btn p-4 text-left rounded-xl transition flex items-center gap-4 text-slate-600 font-bold" data-target="comp-inversores">
+                    <i class="fas fa-microchip text-xl w-6 text-center"></i> Inversores
+                </button>
+                <button class="tab-btn p-4 text-left rounded-xl transition flex items-center gap-4 text-slate-600 font-bold" data-target="comp-protecciones">
+                    <i class="fas fa-bolt text-xl w-6 text-center"></i> Protecciones
+                </button>
+                <button class="tab-btn p-4 text-left rounded-xl transition flex items-center gap-4 text-slate-600 font-bold" data-target="comp-trackers">
+                    <i class="fas fa-satellite-dish text-xl w-6 text-center"></i> Trackers
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 p-10 bg-white relative overflow-y-auto">
+                
+                <div id="comp-modulos" class="tab-content active animate-in">
+                    <div class="flex flex-col lg:flex-row gap-8 items-center h-full">
+                        <div class="flex-1 space-y-6">
+                            <h3 class="text-3xl font-black text-blue-600">Módulos Bifaciales</h3>
+                            <p class="text-lg text-slate-600">La tecnología dominante en parques solares. Captan luz por ambas caras, aprovechando el reflejo del suelo (albedo).</p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="p-4 bg-blue-50 rounded-xl">
+                                    <strong class="block text-blue-800 mb-1">Eficiencia</strong>
+                                    <span class="text-slate-600">> 21.5%</span>
+                                </div>
+                                <div class="p-4 bg-blue-50 rounded-xl">
+                                    <strong class="block text-blue-800 mb-1">Ganancia Bifacial</strong>
+                                    <span class="text-slate-600">Hasta +25%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <img src="https://gycxsolar.com/wp-content/uploads/What-are-Bifacial-Solar-Panels.webp" class="w-full lg:w-1/2 rounded-2xl shadow-lg object-cover h-64 clickable-image">
+                    </div>
+                </div>
+
+                <div id="comp-inversores" class="tab-content hidden animate-in">
+                    <h3 class="text-3xl font-black text-amber-600 mb-6">Inversores (El Cerebro)</h3>
+                    <p class="text-lg text-slate-600 mb-8">Transforman DC a AC y gestionan el MPPT. Existen dos filosofías de diseño:</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="p-6 border-2 border-slate-100 rounded-2xl hover:border-amber-200 transition">
+                            <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mb-4"><i class="fas fa-network-wired"></i></div>
+                            <h4 class="text-xl font-bold text-slate-800 mb-2">String Inverter</h4>
+                            <p class="text-slate-500 text-sm">Descentralizado. Si falla uno, solo pierdes ~100kW. Ideal para mantenimiento rápido (Swap).</p>
+                        </div>
+                        <div class="p-6 border-2 border-slate-100 rounded-2xl hover:border-amber-200 transition">
+                            <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mb-4"><i class="fas fa-box"></i></div>
+                            <h4 class="text-xl font-bold text-slate-800 mb-2">Central Inverter</h4>
+                            <p class="text-slate-500 text-sm">Centralizado (Contenedor). Más económico por Watt, pero si falla, cae un bloque entero de ~4MW.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="comp-protecciones" class="tab-content hidden animate-in">
+                    <h3 class="text-3xl font-black text-danger mb-6">Seguridad Eléctrica (DC)</h3>
+                    <p class="text-lg text-slate-600 mb-6">El arco eléctrico en Corriente Continua no se extingue solo. Protecciones vitales:</p>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4 p-4 bg-red-50 rounded-xl border border-red-100">
+                            <i class="fas fa-plug text-2xl text-danger w-8 text-center"></i>
+                            <div>
+                                <strong class="text-slate-800 block">Fusibles gPV</strong>
+                                <span class="text-slate-600 text-sm">Cortan corrientes inversas que pueden incendiar los cables.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 p-4 bg-red-50 rounded-xl border border-red-100">
+                            <i class="fas fa-bolt text-2xl text-danger w-8 text-center"></i>
+                            <div>
+                                <strong class="text-slate-800 block">Descargadores (SPD)</strong>
+                                <span class="text-slate-600 text-sm">Protegen inversores y módulos contra rayos cercanos.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 p-4 bg-red-50 rounded-xl border border-red-100">
+                            <i class="fas fa-toggle-off text-2xl text-danger w-8 text-center"></i>
+                            <div>
+                                <strong class="text-slate-800 block">Seccionador Bajo Carga</strong>
+                                <span class="text-slate-600 text-sm">Permite aislar el equipo manualmente para mantenimiento seguro.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="comp-trackers" class="tab-content hidden animate-in">
+                    <div class="flex flex-col h-full justify-center">
+                        <h3 class="text-3xl font-black text-slate-800 mb-4">Trackers de 1 Eje</h3>
+                        <p class="text-lg text-slate-600 mb-6">Estructuras robóticas que siguen al sol de Este a Oeste. Claves en "El Quemado".</p>
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div class="p-4 bg-slate-50 rounded-xl">
+                                <div class="text-3xl font-bold text-solar mb-1">+25%</div>
+                                <div class="text-xs text-slate-500 uppercase font-bold">Energía Anual</div>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-xl">
+                                <div class="text-3xl font-bold text-blue-600 mb-1">Stow</div>
+                                <div class="text-xs text-slate-500 uppercase font-bold">Defensa Viento</div>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-xl">
+                                <div class="text-3xl font-bold text-slate-700 mb-1">AI</div>
+                                <div class="text-xs text-slate-500 uppercase font-bold">Backtracking</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 4: DIMENSIONAMIENTO -->
+    <section class="slide flex-col justify-center items-center p-6">
+        <div class="max-w-6xl w-full animate-in">
+            <h2 class="text-3xl font-bold text-slate-800 mb-10 text-center">Checklist de Diseño</h2>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="glass-card p-8 border-b-4 border-red-500 flex flex-col items-center text-center">
+                    <div class="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center text-3xl text-red-500 mb-6">
+                        <i class="fas fa-thermometer-empty"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Voc @ Frío</h3>
+                    <p class="text-sm text-slate-500">El voltaje del panel <strong>SUBE</strong> con el frío. Calcular siempre a T° mínima (-10°C).</p>
+                </div>
+
+                <div class="glass-card p-8 border-b-4 border-blue-500 flex flex-col items-center text-center">
+                    <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center text-3xl text-blue-500 mb-6">
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Overbuild DC/AC</h3>
+                    <p class="text-sm text-slate-500">Instalar más potencia en paneles (DC) que la del inversor (AC). Ratio 1.2 - 1.3 optimiza el LCOE.</p>
+                </div>
+
+                <div class="glass-card p-8 border-b-4 border-slate-500 flex flex-col items-center text-center">
+                    <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center text-3xl text-slate-600 mb-6">
+                        <i class="fas fa-cloud-sun"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Sombreado</h3>
+                    <p class="text-sm text-slate-500">Una sombra pequeña en un panel puede afectar a todo el string. Usar software de simulación 3D (PVSyst).</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 5: SIMULADOR TRACKER (CORREGIDO) -->
+    <section class="slide flex-col justify-center items-center p-6 bg-white">
+        <div class="w-full max-w-5xl animate-in">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-slate-800">Simulación: Tracker vs Fijo</h2>
+                <p class="text-slate-500">Mueve el sol para ver la diferencia de eficiencia real (Incluye factor atmosférico).</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                
+                <!-- Visualización -->
+                <div class="glass-card p-8 relative bg-slate-50 overflow-hidden">
+                    <!-- Botón Fullscreen interno -->
+                    <button class="fullscreen-btn absolute top-4 left-4 w-8 h-8 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-500 z-20" title="Pantalla Completa">
+                        <i class="fas fa-expand text-xs"></i>
+                    </button>
+
+                    <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-blue-50 to-white opacity-50"></div>
+                    <div class="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-xs font-mono text-slate-500 border border-slate-200 shadow-sm z-10" id="time-display">12:00 PM</div>
+                    
+                    <div class="h-64 relative flex items-end justify-center mb-8 z-10">
+                        <div class="sun-track">
+                            <div id="sim-sun" class="sun"></div>
+                        </div>
+                        
+                        <div class="absolute bottom-10 flex gap-16">
+                            <div class="text-center">
+                                <div class="w-24 h-2 bg-slate-400 mx-auto mb-[-2px] rounded-full"></div>
+                                <div class="solar-panel-visual" style="transform: rotate(0deg); width: 80px;"></div>
+                                <span class="text-xs text-slate-500 mt-3 block font-bold">Fijo (0°)</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-24 h-2 bg-slate-400 mx-auto mb-[-2px] rounded-full"></div>
+                                <div id="sim-panel-tracker" class="solar-panel-visual" style="width: 80px;"></div>
+                                <span class="text-xs text-energy mt-3 block font-bold">Tracker</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-4 relative z-10">
+                        <input type="range" id="sun-slider" min="0" max="180" value="90" 
+                            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-solar">
+                        <div class="flex justify-between text-[10px] font-bold mt-2 text-slate-400 uppercase tracking-widest">
+                            <span>Amanecer</span>
+                            <span>Mediodía</span>
+                            <span>Atardecer</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos -->
+                <div class="space-y-8">
+                    <!-- Fixed Stat -->
+                    <div class="glass-card p-6 border-l-4 border-slate-400">
+                        <div class="flex justify-between items-end mb-2">
+                            <h4 class="text-slate-500 uppercase text-xs font-bold tracking-wider">Estructura Fija</h4>
+                            <span id="val-fixed" class="text-3xl font-mono font-bold text-slate-700">100%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                            <div id="bar-fixed" class="h-full bg-slate-400 transition-all duration-75" style="width: 100%"></div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">Cae rápido al alejarse del mediodía.</p>
+                    </div>
+
+                    <!-- Tracker Stat -->
+                    <div class="glass-card p-6 border-l-4 border-energy shadow-xl ring-4 ring-blue-50">
+                        <div class="flex justify-between items-end mb-2">
+                            <h4 class="text-energy uppercase text-xs font-bold tracking-wider">Tracker 1-Eje</h4>
+                            <span id="val-tracker" class="text-4xl font-mono font-bold text-slate-800">100%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                            <div id="bar-tracker" class="h-full bg-energy transition-all duration-75" style="width: 100%"></div>
+                        </div>
+                        <p class="text-xs text-energy mt-2 font-bold">Maximiza la producción siguiendo al sol.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 6: ENSAYOS NO DESTRUCTIVOS (NUEVO Y MEJORADO) -->
+    <section class="slide flex-col justify-center items-center p-6">
+        <h2 class="text-3xl font-bold text-slate-800 mb-8 text-center">Ensayos No Destructivos (END)</h2>
+        <p class="text-slate-500 mb-8 -mt-6 text-center max-w-2xl">Diagnóstico avanzado sin afectar la integridad de los componentes.</p>
+        
+        <div class="glass-card w-full max-w-6xl h-[600px] flex flex-col md:flex-row overflow-hidden shadow-2xl animate-in">
+            <!-- Sidebar -->
+            <div class="w-full md:w-72 bg-slate-50/80 border-r border-slate-200 p-6 flex flex-col gap-3 tab-group" data-group="ndt">
+                <button class="tab-btn active p-4 text-left rounded-xl transition flex items-center gap-4 text-slate-600 font-bold" data-target="ndt-ir">
+                    <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-red-500"><i class="fas fa-fire-alt"></i></div>
+                    Termografía (IR)
+                </button>
+                <button class="tab-btn p-4 text-left rounded-xl transition flex items-center gap-4 text-slate-600 font-bold" data-target="ndt-el">
+                    <div class="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-200"><i class="fas fa-x-ray"></i></div>
+                    Electroluminiscencia
+                </button>
+                <button class="tab-btn p-4 text-left rounded-xl transition flex items-center gap-4 text-slate-600 font-bold" data-target="ndt-iv">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"><i class="fas fa-chart-area"></i></div>
+                    Curvas I-V
+                </button>
+                <button class="tab-btn p-4 text-left rounded-xl transition flex items-center gap-4 text-slate-600 font-bold" data-target="ndt-uv">
+                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600"><i class="fas fa-lightbulb"></i></div>
+                    Fluorescencia UV
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 p-10 bg-white relative overflow-y-auto">
+                
+                <!-- IR -->
+                <div id="ndt-ir" class="tab-content active animate-in">
+                    <div class="flex flex-col lg:flex-row gap-8 h-full">
+                        <div class="flex-1 space-y-6">
+                            <div>
+                                <h3 class="text-3xl font-black text-red-600 mb-2">Termografía Infrarroja</h3>
+                                <span class="text-xs font-bold bg-red-100 text-red-800 px-2 py-1 rounded">Norma IEC 62446-3</span>
+                            </div>
+                            <p class="text-lg text-slate-600">Técnica rápida y sin contacto para detectar anomalías térmicas.</p>
+                            <ul class="space-y-4">
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-red-500 mt-1"></i>
+                                    <div>
+                                        <strong>Hotspots:</strong> Celdas dañadas o sombreadas que disipan energía como calor.
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-red-500 mt-1"></i>
+                                    <div>
+                                        <strong>Diodos Bypass:</strong> Detección de diodos activados o abiertos (patrón "ajedrez").
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-red-500 mt-1"></i>
+                                    <div>
+                                        <strong>Conexiones:</strong> Detección de cables y conectores sobrecalentados.
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="w-full lg:w-1/2 flex flex-col gap-4">
+                            <img src="https://www.kapter.mx/wp-content/uploads/2021/09/Aplicacio%CC%81n-de-la-termografi%CC%81a-en-energi%CC%81as-renovables-1024x536-1-930x536.jpeg" class="rounded-2xl shadow-lg object-cover h-48 clickable-image w-full">
+                            <div class="p-4 bg-red-50 rounded-xl border border-red-100 text-sm text-red-900">
+                                <strong>Criterio de Falla:</strong> Un Delta T > 10°C se considera una anomalía grave que requiere inspección.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EL -->
+                <div id="ndt-el" class="tab-content hidden animate-in">
+                    <div class="flex flex-col lg:flex-row gap-8 h-full">
+                        <div class="flex-1 space-y-6">
+                            <div>
+                                <h3 class="text-3xl font-black text-slate-800 mb-2">Electroluminiscencia (EL)</h3>
+                                <span class="text-xs font-bold bg-slate-200 text-slate-800 px-2 py-1 rounded">IEC TS 60904-13</span>
+                            </div>
+                            <p class="text-lg text-slate-600">La "Radiografía" del panel. Se inyecta corriente inversa en oscuridad y una cámara especial capta la emisión de fotones.</p>
+                            <ul class="space-y-4">
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-slate-800 mt-1"></i>
+                                    <div>
+                                        <strong>Micro-cracks:</strong> Fisuras invisibles al ojo humano causadas por transporte o granizo.
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-slate-800 mt-1"></i>
+                                    <div>
+                                        <strong>PID (Potential Induced Degradation):</strong> Degradación severa visible como celdas oscurecidas en los bordes.
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="w-full lg:w-1/2 flex flex-col gap-4">
+                            <img src="https://cdn-ildfgbb.nitrocdn.com/wNQeBLtzhFCMBPzCHseHSKaICWYPfcjJ/assets/images/optimized/rev-562e678/couleenergy.com/wp-content/uploads/2024/12/EL-Imaging-under-el-inspection-with-hidden-cracks.jpg" class="rounded-2xl shadow-lg object-cover h-48 clickable-image w-full grayscale">
+                            <div class="p-4 bg-slate-100 rounded-xl border border-slate-200 text-sm text-slate-700">
+                                <strong>Nota:</strong> Requiere oscuridad total (noche o cámara oscura) y fuente de alimentación externa.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IV -->
+                <div id="ndt-iv" class="tab-content hidden animate-in">
+                    <div class="flex flex-col lg:flex-row gap-8 h-full">
+                        <div class="flex-1 space-y-6">
+                            <div>
+                                <h3 class="text-3xl font-black text-blue-600 mb-2">Trazado de Curvas I-V</h3>
+                                <span class="text-xs font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded">IEC 61829</span>
+                            </div>
+                            <p class="text-lg text-slate-600">Análisis de la salud eléctrica. Compara la curva real vs la curva teórica del fabricante.</p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="p-4 border border-blue-100 rounded-xl">
+                                    <strong class="block text-blue-800">Escalón en Curva</strong>
+                                    <span class="text-sm text-slate-500">Indica sombreado parcial o diodo bypass activado.</span>
+                                </div>
+                                <div class="p-4 border border-blue-100 rounded-xl">
+                                    <strong class="block text-blue-800">Baja Pendiente</strong>
+                                    <span class="text-sm text-slate-500">Indica baja resistencia de shunt (daño en celda).</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full lg:w-1/2 flex flex-col gap-4 justify-center">
+                            <!-- Simple SVG Curve -->
+                            <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200 h-48 flex items-end">
+                                <svg viewBox="0 0 200 100" class="w-full h-full overflow-visible">
+                                    <path d="M0,100 L0,10 Q100,10 160,10 C180,10 190,90 200,100" fill="none" stroke="#2563EB" stroke-width="3"/>
+                                    <path d="M0,100 L0,20 Q100,20 140,20 C160,20 170,90 180,100" fill="none" stroke="#EF4444" stroke-width="2" stroke-dasharray="4"/>
+                                    <text x="100" y="40" class="text-[10px] fill-red-500">Curva Degradada</text>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UV -->
+                <div id="ndt-uv" class="tab-content hidden animate-in">
+                    <div class="flex flex-col lg:flex-row gap-8 h-full">
+                        <div class="flex-1 space-y-6">
+                            <div>
+                                <h3 class="text-3xl font-black text-purple-600 mb-2">Fluorescencia UV</h3>
+                                <span class="text-xs font-bold bg-purple-100 text-purple-800 px-2 py-1 rounded">Técnica Avanzada</span>
+                            </div>
+                            <p class="text-lg text-slate-600">Método novedoso para evaluar el envejecimiento del encapsulante (EVA) y microfisuras.</p>
+                            <ul class="space-y-4">
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-lightbulb text-purple-500 mt-1"></i>
+                                    <div>
+                                        <strong>Principio:</strong> Se ilumina el panel con luz UV. El EVA degradado fluoresce de forma distinta.
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-search text-purple-500 mt-1"></i>
+                                    <div>
+                                        <strong>Detección:</strong> Permite ver celdas rotas en paneles instalados sin necesidad de inyectar corriente (como en EL).
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="w-full lg:w-1/2 flex flex-col justify-center items-center bg-slate-900 rounded-2xl p-8">
+                            <div class="text-center">
+                                <i class="fas fa-sun text-purple-400 text-6xl mb-4 animate-pulse-slow"></i>
+                                <p class="text-slate-300 text-sm">Simulación de Inspección UV Nocturna</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 7: DIAGNÓSTICO (GAMIFICADO) -->
+    <section class="slide flex-col justify-center items-center p-6 bg-slate-50">
+        <div class="text-center mb-10 animate-in">
+            <h2 class="text-3xl font-bold text-slate-800">Tablero de Fallas (Correctivo)</h2>
+            <p class="text-slate-500">Haz clic en las tarjetas de alerta para ver el diagnóstico.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
+            <!-- Fault 1 -->
+            <div class="glass-card p-8 relative overflow-hidden group cursor-pointer h-72 border-t-4 border-t-danger shadow-md hover:shadow-xl transition-all" onclick="this.classList.toggle('diagnosed')">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-solar-panel text-slate-400"></i></div>
+                    <div class="animate-pulse text-danger text-2xl"><i class="fas fa-exclamation-triangle"></i></div>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Baja Resistencia</h3>
+                <p class="text-sm text-slate-500 font-mono">Error: ISO Low < 1MΩ</p>
+                
+                <div class="absolute inset-0 bg-white z-10 flex flex-col justify-center items-center p-6 text-center opacity-0 transition-opacity duration-500 pointer-events-none group-[.diagnosed]:opacity-100 group-[.diagnosed]:pointer-events-auto">
+                    <i class="fas fa-check-circle text-success text-5xl mb-4 scale-0 group-[.diagnosed]:scale-100 transition-transform duration-300 delay-100"></i>
+                    <h4 class="font-bold text-slate-800 text-lg">Causa: Humedad</h4>
+                    <p class="text-sm text-slate-500 mt-2">Cable DC dañado o conector mojado. Usar Megóhmetro.</p>
+                </div>
+            </div>
+
+            <!-- Fault 2 -->
+            <div class="glass-card p-8 relative overflow-hidden group cursor-pointer h-72 border-t-4 border-t-danger shadow-md hover:shadow-xl transition-all" onclick="this.classList.toggle('diagnosed')">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-fire text-slate-400"></i></div>
+                    <div class="animate-pulse text-danger text-2xl"><i class="fas fa-exclamation-triangle"></i></div>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Hotspot</h3>
+                <p class="text-sm text-slate-500 font-mono">Detectado en IR</p>
+                
+                <div class="absolute inset-0 bg-white z-10 flex flex-col justify-center items-center p-6 text-center opacity-0 transition-opacity duration-500 pointer-events-none group-[.diagnosed]:opacity-100 group-[.diagnosed]:pointer-events-auto">
+                    <i class="fas fa-check-circle text-success text-5xl mb-4 scale-0 group-[.diagnosed]:scale-100 transition-transform duration-300 delay-100"></i>
+                    <h4 class="font-bold text-slate-800 text-lg">Causa: Sombra/Daño</h4>
+                    <p class="text-sm text-slate-500 mt-2">Celda rota o diodo activado. Reemplazar si ΔT > 20°C.</p>
+                </div>
+            </div>
+
+            <!-- Fault 3 -->
+            <div class="glass-card p-8 relative overflow-hidden group cursor-pointer h-72 border-t-4 border-t-danger shadow-md hover:shadow-xl transition-all" onclick="this.classList.toggle('diagnosed')">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-plug text-slate-400"></i></div>
+                    <div class="animate-pulse text-danger text-2xl"><i class="fas fa-exclamation-triangle"></i></div>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Conector Quemado</h3>
+                <p class="text-sm text-slate-500 font-mono">Inspección Visual</p>
+                
+                <div class="absolute inset-0 bg-white z-10 flex flex-col justify-center items-center p-6 text-center opacity-0 transition-opacity duration-500 pointer-events-none group-[.diagnosed]:opacity-100 group-[.diagnosed]:pointer-events-auto">
+                    <i class="fas fa-check-circle text-success text-5xl mb-4 scale-0 group-[.diagnosed]:scale-100 transition-transform duration-300 delay-100"></i>
+                    <h4 class="font-bold text-slate-800 text-lg">Causa: Crimpeado</h4>
+                    <p class="text-sm text-slate-500 mt-2">Mal apriete o conectores incompatibles. Reemplazar par.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 8: KPIs (DASHBOARD MEJORADO) -->
+    <section class="slide flex-col justify-center items-center p-6">
+        <h2 class="text-3xl font-bold mb-8 text-slate-800">SCADA Dashboard (En Vivo)</h2>
+        
+        <div class="w-full max-w-6xl grid md:grid-cols-4 gap-6">
+            <!-- Status Column -->
+            <div class="col-span-1 flex flex-col gap-4">
+                <div class="glass-card p-4 flex items-center gap-3 border-l-4 border-green-500">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Estado Planta</p>
+                        <p class="font-bold text-slate-800">Operativa 100%</p>
+                    </div>
+                </div>
+                <div class="glass-card p-4 flex items-center gap-3 border-l-4 border-green-500">
+                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Red (SADI)</p>
+                        <p class="font-bold text-slate-800">Conectado</p>
+                    </div>
+                </div>
+                <div class="glass-card p-4 flex items-center gap-3 border-l-4 border-blue-500">
+                    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Inversores</p>
+                        <p class="font-bold text-slate-800">32/32 Online</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Gauges -->
+            <div class="col-span-2 flex justify-center items-center gap-8 glass-card p-8">
+                <!-- Gauge 1 -->
+                <div class="relative w-48 h-48">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" stroke="#E2E8F0" stroke-width="8" fill="transparent" />
+                        <circle cx="50" cy="50" r="45" stroke="#10B981" stroke-width="8" fill="transparent" 
+                                stroke-dasharray="283" stroke-dashoffset="2.5" stroke-linecap="round" />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-4xl font-black text-slate-800">99.5%</span>
+                        <span class="text-xs text-slate-400 font-bold uppercase">Disponibilidad</span>
+                    </div>
+                </div>
+                <!-- Gauge 2 -->
+                <div class="relative w-48 h-48">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" stroke="#E2E8F0" stroke-width="8" fill="transparent" />
+                        <circle cx="50" cy="50" r="45" stroke="#2563EB" stroke-width="8" fill="transparent" 
+                                stroke-dasharray="283" stroke-dashoffset="50" stroke-linecap="round" />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-4xl font-black text-slate-800">0.84</span>
+                        <span class="text-xs text-slate-400 font-bold uppercase">P. Ratio (PR)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs Column -->
+            <div class="col-span-1 glass-card p-4 bg-slate-50 flex flex-col h-full">
+                <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-3 border-b pb-2">System Logs</p>
+                <div class="overflow-hidden space-y-2 text-xs font-mono text-slate-600">
+                    <div class="log-line"><span class="text-green-500">[OK]</span> Inv-01 Sync Grid</div>
+                    <div class="log-line"><span class="text-green-500">[OK]</span> Tracker-05 Position OK</div>
+                    <div class="log-line"><span class="text-green-500">[OK]</span> MetStation Data RX</div>
+                    <div class="log-line"><span class="text-blue-500">[INF]</span> Irradiance: 980 W/m2</div>
+                    <div class="log-line"><span class="text-amber-500">[WRN]</span> Amb Temp: 35°C</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 9: COMPARATIVA (BATTLE MODE) -->
+    <section class="slide flex-col justify-center items-center p-6">
+        <div class="max-w-6xl w-full h-full flex flex-col justify-center">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-slate-800">Batalla Tecnológica</h2>
+                <p class="text-slate-500">Compara la Solar FV contra otras fuentes en tiempo real.</p>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-8 items-stretch min-h-[400px]">
+                <!-- Columna Izquierda: Selector -->
+                <div class="w-full md:w-1/4 flex flex-col gap-4 tab-group" data-group="battle">
+                    <button class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition text-left flex items-center gap-4 tab-btn active" data-target="battle-eolica" onclick="updateBattle('eolica')">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fas fa-wind"></i></div>
+                        <strong class="text-slate-800">Eólica</strong>
+                    </button>
+                    <button class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition text-left flex items-center gap-4 tab-btn" data-target="battle-hidro" onclick="updateBattle('hidro')">
+                        <div class="w-10 h-10 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center"><i class="fas fa-water"></i></div>
+                        <strong class="text-slate-800">Hidro</strong>
+                    </button>
+                    <button class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition text-left flex items-center gap-4 tab-btn" data-target="battle-termica" onclick="updateBattle('termica')">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fas fa-fire"></i></div>
+                        <strong class="text-slate-800">Térmica</strong>
+                    </button>
+                </div>
+
+                <!-- Columna Central: Visualización Gráfica -->
+                <div class="flex-1 glass-card p-8 flex flex-col justify-center relative overflow-hidden">
+                    
+                    <!-- Gráfico de Barras Comparativo -->
+                    <div class="space-y-8">
+                        <!-- Metric 1: Costo LCOE -->
+                        <div>
+                            <div class="flex justify-between text-sm font-bold text-slate-500 mb-2">
+                                <span>Costo Energía (LCOE)</span>
+                                <span class="text-xs font-normal">Más bajo es mejor</span>
+                            </div>
+                            <div class="relative h-10">
+                                <div class="absolute top-0 left-0 h-4 bg-solar rounded-full shadow-sm flex items-center px-2" style="width: 40%">
+                                    <span class="text-[10px] font-bold text-white">SOLAR</span>
+                                </div>
+                                <div id="bar-lcoe" class="absolute top-5 left-0 h-4 bg-slate-400 rounded-full shadow-sm flex items-center px-2 transition-all duration-500" style="width: 45%">
+                                    <span id="label-comp" class="text-[10px] font-bold text-white">EÓLICA</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metric 2: Tiempo Construcción -->
+                        <div>
+                            <div class="flex justify-between text-sm font-bold text-slate-500 mb-2">
+                                <span>Tiempo Construcción</span>
+                                <span class="text-xs font-normal">Más rápido es mejor</span>
+                            </div>
+                            <div class="relative h-10">
+                                <div class="absolute top-0 left-0 h-4 bg-solar rounded-full shadow-sm flex items-center px-2" style="width: 20%">
+                                    <span class="text-[10px] font-bold text-white">SOLAR</span>
+                                </div>
+                                <div id="bar-time" class="absolute top-5 left-0 h-4 bg-slate-400 rounded-full shadow-sm flex items-center px-2 transition-all duration-500" style="width: 30%">
+                                    <span class="text-[10px] font-bold text-white">VS</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metric 3: Emisiones CO2 -->
+                        <div>
+                            <div class="flex justify-between text-sm font-bold text-slate-500 mb-2">
+                                <span>Emisiones CO2</span>
+                                <span class="text-xs font-normal">Menos es mejor</span>
+                            </div>
+                            <div class="relative h-10">
+                                <div class="absolute top-0 left-0 h-4 bg-green-500 rounded-full shadow-sm flex items-center px-2" style="width: 10%">
+                                    <span class="text-[10px] font-bold text-white">SOLAR</span>
+                                </div>
+                                <div id="bar-co2" class="absolute top-5 left-0 h-4 bg-slate-400 rounded-full shadow-sm flex items-center px-2 transition-all duration-500" style="width: 12%">
+                                    <span class="text-[10px] font-bold text-white">VS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="battle-desc" class="mt-8 p-4 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-600 text-center transition-all">
+                        La energía Eólica tiene costos similares, pero su mantenimiento es mecánico y complejo.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 10: CONTEXTO ARGENTINA -->
+    <section class="slide flex-col justify-center items-center p-6">
+        <div class="max-w-6xl w-full">
+            <h2 class="text-3xl font-bold mb-12 text-slate-800 text-center">Contexto Regulatorio Argentina</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="glass-card p-8 border-l-8 border-sky-400 hover:bg-white transition">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-sky-700">Generación Distribuida</h3>
+                        <span class="bg-sky-100 text-sky-800 px-3 py-1 rounded-full text-xs font-bold">LEY 27.424</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 bg-sky-50 rounded-xl text-center">
+                            <i class="fas fa-home text-2xl text-sky-500 mb-2"></i>
+                            <p class="text-xs text-sky-900 font-bold">Residencial / PyME</p>
+                        </div>
+                        <div class="p-4 bg-sky-50 rounded-xl text-center">
+                            <i class="fas fa-exchange-alt text-2xl text-sky-500 mb-2"></i>
+                            <p class="text-xs text-sky-900 font-bold">Medidor Bidireccional</p>
+                        </div>
+                    </div>
+                    <p class="mt-6 text-slate-600 text-sm">Permite inyectar excedentes a la red y obtener un crédito en la factura (Net Billing).</p>
+                </div>
+
+                <div class="glass-card p-8 border-l-8 border-indigo-600 hover:bg-white transition">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-indigo-800">Grandes Parques</h3>
+                        <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-bold">MATER</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 bg-indigo-50 rounded-xl text-center">
+                            <i class="fas fa-industry text-2xl text-indigo-600 mb-2"></i>
+                            <p class="text-xs text-indigo-900 font-bold">Mercado Mayorista</p>
+                        </div>
+                        <div class="p-4 bg-indigo-50 rounded-xl text-center">
+                            <i class="fas fa-file-signature text-2xl text-indigo-600 mb-2"></i>
+                            <p class="text-xs text-indigo-900 font-bold">Contratos PPA</p>
+                        </div>
+                    </div>
+                    <p class="mt-6 text-slate-600 text-sm">Venta de energía entre privados o a CAMMESA. Requiere conexión en Alta Tensión.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 11: CASO ESTUDIO EL QUEMADO -->
+    <section class="slide flex-col justify-center items-center p-6">
+        <div class="max-w-6xl w-full animate-in">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Caso de Estudio: PS El Quemado</h2>
+            <p class="text-slate-500 mb-8">Mendoza, Argentina. 305 MW.</p>
+            
+            <div class="glass-card overflow-hidden flex flex-col md:flex-row shadow-xl h-[500px]">
+                <div class="w-full md:w-1/2 relative group">
+                    <img src="https://diarioneuquino.com.ar/wp-content/uploads/2025/07/parque-solar-el-quemado.jpg" class="absolute inset-0 w-full h-full object-cover clickable-image transition-transform duration-700 group-hover:scale-105">
+                    <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent text-white">
+                        <p class="font-bold text-lg">YPF Luz</p>
+                        <p class="text-sm opacity-90">Las Heras, Mendoza</p>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 p-10 flex flex-col justify-center bg-white">
+                    <div class="grid grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <div class="text-4xl font-black text-slate-800">305<span class="text-lg text-slate-400">MW</span></div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Potencia</div>
+                        </div>
+                        <div>
+                            <div class="text-4xl font-black text-green-600">31.4<span class="text-lg text-green-400">%</span></div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Factor Capacidad</div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                            <i class="fas fa-layer-group text-blue-600"></i>
+                            <span class="text-slate-700 font-medium">~530,000 Paneles Bifaciales</span>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                            <i class="fas fa-sync-alt text-amber-600"></i>
+                            <span class="text-slate-700 font-medium">Trackers 1-Eje</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-slate-100 text-sm text-slate-500 italic">
+                        "La combinación de alta radiación y suelo claro (albedo) en Mendoza hace que la tecnología bifacial sea imbatible."
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 12: GALERÍA -->
+    <section class="slide flex-col justify-center items-center p-6">
+        <h2 class="text-3xl font-bold mb-8 text-slate-800">Galería Técnica</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-6xl w-full h-[500px]">
+            <div class="col-span-2 row-span-2 relative rounded-2xl overflow-hidden shadow-lg group cursor-pointer clickable-image">
+                <img src="https://diarioneuquino.com.ar/wp-content/uploads/2025/07/parque-solar-el-quemado.jpg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                <div class="absolute bottom-0 p-4 w-full bg-gradient-to-t from-black/80 to-transparent text-white">
+                    <p class="font-bold">Vista Aérea Parque Solar</p>
+                </div>
+            </div>
+            <div class="relative rounded-2xl overflow-hidden shadow-lg group cursor-pointer clickable-image bg-white group">
+                <img src="https://strapi.fluke.com.ar/uploads/large_megohmetro_digital_fluke_1507_accbdfcbfb.jpg" class="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform">
+                <div class="absolute bottom-0 p-2 w-full bg-slate-900/80 text-white text-xs text-center backdrop-blur-sm">Megóhmetro</div>
+            </div>
+             <div class="relative rounded-2xl overflow-hidden shadow-lg group cursor-pointer clickable-image bg-white group">
+                <img src="https://cdn-ildfgbb.nitrocdn.com/wNQeBLtzhFCMBPzCHseHSKaICWYPfcjJ/assets/images/optimized/rev-562e678/couleenergy.com/wp-content/uploads/2024/12/EL-Imaging-under-el-inspection-with-hidden-cracks.jpg" class="w-full h-full object-cover group-hover:scale-110 transition-transform">
+                <div class="absolute bottom-0 p-2 w-full bg-slate-900/80 text-white text-xs text-center backdrop-blur-sm">Electroluminiscencia</div>
+            </div>
+            <div class="col-span-2 relative rounded-2xl overflow-hidden shadow-lg group cursor-pointer clickable-image group">
+                <img src="https://www.kapter.mx/wp-content/uploads/2021/09/Aplicacio%CC%81n-de-la-termografi%CC%81a-en-energi%CC%81as-renovables-1024x536-1-930x536.jpeg" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                <div class="absolute bottom-0 p-2 w-full bg-slate-900/80 text-white text-xs text-center backdrop-blur-sm">Termografía (Hotspot)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 13: CONCLUSIONES -->
+    <section class="slide flex-col justify-center items-center text-center p-6">
+        <div class="animate-in w-full max-w-5xl">
+            <div class="glass-card p-12 border border-white shadow-2xl bg-white/80">
+                <h2 class="text-4xl font-black text-slate-800 mb-10">Conclusiones Finales</h2>
+                
+                <div class="grid md:grid-cols-3 gap-8 text-left">
+                     <div class="p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
+                        <div class="text-5xl font-black text-blue-200 mb-4">01</div>
+                        <h3 class="font-bold text-slate-800 mb-2 text-lg">Diseño Seguro</h3>
+                        <p class="text-sm text-slate-600">El 80% de las fallas nacen en el diseño. Calcular siempre el Voc a baja temperatura es innegociable.</p>
+                    </div>
+                    <div class="p-6 bg-amber-50/50 rounded-2xl border border-amber-100">
+                        <div class="text-5xl font-black text-amber-200 mb-4">02</div>
+                        <h3 class="font-bold text-slate-800 mb-2 text-lg">O&M Inteligente</h3>
+                        <p class="text-sm text-slate-600">Pasar del preventivo (calendario) al predictivo (datos). Una termografía a tiempo salva miles de dólares.</p>
+                    </div>
+                    <div class="p-6 bg-green-50/50 rounded-2xl border border-green-100">
+                        <div class="text-5xl font-black text-green-200 mb-4">03</div>
+                        <h3 class="font-bold text-slate-800 mb-2 text-lg">Calidad IEC</h3>
+                        <p class="text-sm text-slate-600">Sin un comisionamiento (IEC 62446) riguroso, no hay línea base para reclamar garantías futuras.</p>
+                    </div>
+                </div>
+
+                <button onclick="goToSlide(0)" class="mt-12 px-10 py-4 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition text-sm tracking-widest uppercase shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    Reiniciar Presentación
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL IMAGEN -->
+    <div id="img-modal" class="fixed inset-0 z-[100] hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="relative max-w-5xl max-h-[90vh] p-2">
+            <button id="close-modal" class="absolute -top-12 right-0 text-white text-3xl hover:text-amber-500">&times;</button>
+            <img id="modal-img-target" src="" class="max-h-[85vh] rounded-lg shadow-2xl bg-white">
+        </div>
+    </div>
+
+    <script>
+        /* --- LOGICA SLIDESHOW --- */
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const indicator = document.getElementById('slide-indicator');
+
+        function updateSlides() {
+            slides.forEach((s, i) => {
+                s.classList.remove('active');
+                if (i === currentSlide) {
+                    s.classList.add('active');
+                    // Re-trigger animations
+                    const animatedElements = s.querySelectorAll('.animate-in');
+                    animatedElements.forEach(el => {
+                        el.style.animation = 'none';
+                        el.offsetHeight; /* trigger reflow */
+                        el.style.animation = null; 
+                    });
+                }
+            });
+            indicator.innerText = `${(currentSlide + 1).toString().padStart(2, '0')} / ${slides.length}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlides();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlides();
+            }
+        }
+        
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlides();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        /* --- LOGICA TABS --- */
+        const tabGroups = document.querySelectorAll('.tab-group');
+        tabGroups.forEach(group => {
+            const btns = group.querySelectorAll('.tab-btn');
+            btns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const target = btn.dataset.target;
+                    
+                    // Si es el grupo de batalla, no ocultamos contenedores, usamos updateBattle
+                    if (group.dataset.group === 'battle') return;
+
+                    const context = group.closest('.glass-card'); // Busca contenedor padre
+                    
+                    // Reset btns
+                    btns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    // Toggle content
+                    context.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    const content = document.getElementById(target);
+                    if(content) content.classList.remove('hidden');
+                });
+            });
+        });
+
+        /* --- LOGICA BATTLE MODE (COMPARATIVA) --- */
+        const battleData = {
+            eolica: { name: 'EÓLICA', lcoe: 45, time: 30, co2: 12, color: '#64748B', desc: 'Costos similares, pero mantenimiento mecánico complejo.' },
+            hidro: { name: 'HIDRO', lcoe: 60, time: 80, co2: 20, color: '#06B6D4', desc: 'Obra civil masiva y lenta, pero almacena energía (embalse).' },
+            termica: { name: 'TÉRMICA', lcoe: 80, time: 20, co2: 95, color: '#475569', desc: 'Altas emisiones y costo variable (combustible), pero potencia firme.' }
+        };
+
+        function updateBattle(tech) {
+            const data = battleData[tech];
+            const btns = document.querySelectorAll('[data-group="battle"] .tab-btn');
+            
+            // Update Buttons UI
+            btns.forEach(b => {
+                b.classList.remove('active', 'border-l-8', 'border-blue-500');
+                if(b.dataset.target === `battle-${tech}`) {
+                    b.classList.add('active', 'border-l-8', 'border-blue-500');
+                }
+            });
+
+            // Animate Bars
+            const barLCOE = document.getElementById('bar-lcoe');
+            const barTime = document.getElementById('bar-time');
+            const barCO2 = document.getElementById('bar-co2');
+            const labelComp = document.getElementById('label-comp');
+            const desc = document.getElementById('battle-desc');
+
+            // Update Widths (Arbitrary visual scales)
+            barLCOE.style.width = data.lcoe + '%';
+            barTime.style.width = data.time + '%';
+            barCO2.style.width = data.co2 + '%';
+            
+            // Colors & Text
+            barLCOE.style.backgroundColor = data.color;
+            barTime.style.backgroundColor = data.color;
+            barCO2.style.backgroundColor = data.color;
+            
+            document.querySelectorAll('#bar-lcoe span, #bar-time span, #bar-co2 span').forEach(s => s.innerText = data.name);
+            
+            desc.innerText = data.desc;
+            desc.style.opacity = 0;
+            setTimeout(() => desc.style.opacity = 1, 200);
+        }
+
+        /* --- LOGICA SIMULADOR SOLAR REALISTA (CORREGIDA) --- */
+        const slider = document.getElementById('sun-slider');
+        const sun = document.getElementById('sim-sun');
+        const trackerPanel = document.getElementById('sim-panel-tracker');
+        const timeDisplay = document.getElementById('time-display');
+        const valFixed = document.getElementById('val-fixed');
+        const barFixed = document.getElementById('bar-fixed');
+        const valTracker = document.getElementById('val-tracker');
+        const barTracker = document.getElementById('bar-tracker');
+
+        function updateSimulation() {
+            const sliderVal = parseInt(slider.value); 
+            const angleRad = (sliderVal * Math.PI) / 180;
+            
+            // 1. Posición Sol
+            const xPos = (sliderVal / 180) * 100;
+            const yPos = Math.sin(angleRad) * 100;
+            sun.style.left = `${xPos}%`;
+            sun.style.bottom = `${yPos}%`;
+            sun.style.top = 'auto';
+
+            // 2. Hora
+            const startHour = 6; 
+            const totalHours = 14;
+            const currentHourDec = startHour + (sliderVal / 180) * totalHours;
+            const hour = Math.floor(currentHourDec);
+            const min = Math.floor((currentHourDec - hour) * 60);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour > 12 ? hour - 12 : hour;
+            timeDisplay.innerText = `${displayHour}:${min.toString().padStart(2, '0')} ${ampm}`;
+
+            // 3. Eficiencia Realista (FACTOR ATMÓSFERA AM)
+            // Angulo Sol: 0 (E) a 180 (W). Zenith 90.
+            const sunAngleDeg = sliderVal;
+            
+            // Factor Atmosférico simple (sin de angulo elevacion). 0 en horizonte, 1 en cenit.
+            const irradianceFactor = Math.sin(angleRad);
+
+            // --- FIJO (Apunta a Zenith 90) ---
+            let incidenceFixed = Math.abs(90 - sunAngleDeg);
+            if (incidenceFixed > 90) incidenceFixed = 90;
+            
+            // Eficiencia = Cos(Incidencia) * Irradiancia
+            let effFixed = Math.cos(incidenceFixed * (Math.PI / 180)) * irradianceFactor;
+            if (effFixed < 0) effFixed = 0;
+            const effFixedPerc = Math.round(effFixed * 100);
+            
+            // --- TRACKER ---
+            // Limites fisicos del tracker (+/- 60 grados desde la vertical)
+            // Vertical es 90. Rango: 30 a 150.
+            let panelTrackerAngle = sunAngleDeg;
+            if (panelTrackerAngle < 30) panelTrackerAngle = 30;
+            if (panelTrackerAngle > 150) panelTrackerAngle = 150;
+            
+            const cssRotation = (panelTrackerAngle - 90); 
+            trackerPanel.style.transform = `rotate(${cssRotation}deg)`;
+
+            let incidenceTracker = Math.abs(sunAngleDeg - panelTrackerAngle);
+            
+            // Eficiencia Tracker = Cos(Incidencia pequeña) * Irradiancia
+            let effTracker = Math.cos(incidenceTracker * (Math.PI / 180)) * irradianceFactor;
+            if (effTracker < 0) effTracker = 0;
+            const effTrackerPerc = Math.round(effTracker * 100);
+
+            // UI Update
+            valFixed.innerText = `${effFixedPerc}%`;
+            barFixed.style.width = `${effFixedPerc}%`;
+            valTracker.innerText = `${effTrackerPerc}%`;
+            barTracker.style.width = `${effTrackerPerc}%`;
+            
+            // Color dynamics
+            barFixed.className = `h-full transition-all duration-75 ${effFixedPerc < 20 ? 'bg-red-400' : 'bg-slate-400'}`;
+        }
+
+        if(slider) slider.addEventListener('input', updateSimulation);
+        if(slider) updateSimulation();
+
+        /* --- MODAL IMAGEN --- */
+        const modal = document.getElementById('img-modal');
+        const modalImg = document.getElementById('modal-img-target');
+        const closeModal = document.getElementById('close-modal');
+
+        document.querySelectorAll('.clickable-image').forEach(img => {
+            img.addEventListener('click', (e) => {
+                modalImg.src = e.target.src;
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            });
+        });
+
+        closeModal.addEventListener('click', () => {
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        });
+        modal.addEventListener('click', (e) => {
+            if(e.target === modal) closeModal.click();
+        });
+
+        // Fullscreen Logic
+        const toggleFullscreen = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => {
+                    console.log(`Error attempting to enable fullscreen: ${e.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        };
+
+        document.querySelectorAll('.fullscreen-btn').forEach(btn => {
+            btn.addEventListener('click', toggleFullscreen);
+        });
+        
+        // Update icons on change
+        document.addEventListener('fullscreenchange', () => {
+            const isFull = !!document.fullscreenElement;
+            document.querySelectorAll('.fullscreen-btn i').forEach(icon => {
+                icon.className = isFull ? 'fas fa-compress' : 'fas fa-expand';
+            });
+        });
+
+    </script>
+</body>
+</html>
